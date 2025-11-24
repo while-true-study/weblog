@@ -18,11 +18,11 @@ public class Post {
     private Long postId;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @Column(nullable = false)
-    private User authorId;
+    @JoinColumn(nullable = false)
+    private User author;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @Column(nullable = false)
+    @JoinColumn(nullable = false)
     private Categories categoriesId;
 
     private String title;

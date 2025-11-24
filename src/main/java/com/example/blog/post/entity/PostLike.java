@@ -17,12 +17,12 @@ public class PostLike {
     private Long postLikeId;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @Column(nullable = false)
-    private Post postId;
+    @JoinColumn(nullable = false)
+    private Post post;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @Column(nullable = false)
-    private User userId;
+    @JoinColumn(nullable = false)
+    private User user;
 
     private LocalDateTime createdAt;
 }
