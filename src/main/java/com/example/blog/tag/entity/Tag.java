@@ -1,4 +1,4 @@
-package com.example.blog.domain.tag;
+package com.example.blog.tag.entity;
 
 import jakarta.persistence.*;
 import lombok.Getter;

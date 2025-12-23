@@ -1,7 +1,7 @@
-package com.example.blog.domain.tag;
+package com.example.blog.tag.entity;
 
-import com.example.blog.domain.post.entity.Post;
-import com.example.blog.domain.user.entity.User;
+import com.example.blog.post.entity.Post;
+import com.example.blog.user.entity.User;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;

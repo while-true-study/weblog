@@ -1,6 +1,6 @@
 package com.example.blog.global.security;
 
-import com.example.blog.domain.user.service.CustomUserDetailsService;
+import com.example.blog.user.service.CustomUserDetailsService;
 import com.example.blog.global.security.jwt.JWTFilter;
 import com.example.blog.global.security.jwt.JWTUtil;
 import lombok.RequiredArgsConstructor;

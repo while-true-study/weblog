@@ -1,4 +1,4 @@
-package com.example.blog.domain.user.entity;
+package com.example.blog.user.entity;
 
 import jakarta.persistence.*;
 import lombok.*;

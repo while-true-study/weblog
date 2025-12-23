@@ -1,12 +1,12 @@
-package com.example.blog.api.auth;
+package com.example.blog.auth.presentation;
 
-import com.example.blog.domain.user.dto.LoginRequest;
-import com.example.blog.domain.user.dto.SignupRequest;
-import com.example.blog.domain.user.dto.UserResponse;
-import com.example.blog.domain.user.entity.CustomUserPrincipal;
-import com.example.blog.domain.user.service.UserService;
 import com.example.blog.global.common.ApiResponse;
 import com.example.blog.global.security.jwt.JWTUtil;
+import com.example.blog.user.entity.CustomUserPrincipal;
+import com.example.blog.user.presentation.dto.request.LoginRequest;
+import com.example.blog.user.presentation.dto.request.SignupRequest;
+import com.example.blog.user.presentation.dto.response.UserResponse;
+import com.example.blog.user.service.UserService;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpHeaders;
@@ -67,7 +67,7 @@ public class AuthController {
 
         response.addHeader(HttpHeaders.SET_COOKIE, cookie.toString());
 
-        return ApiResponse.success(new TokenResponse(accessToken));
+        return ApiResponse.success(new TokenResponse(accessToken, refreshToken));
     }
 
     @GetMapping("/me")
@@ -77,5 +77,6 @@ public class AuthController {
         );
     }
 
-    public record TokenResponse(String accessToken) {}
+    public record TokenResponse(String accessToken, String refreshToken) {
+    }
 }

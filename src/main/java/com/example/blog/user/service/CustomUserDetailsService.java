@@ -1,16 +1,13 @@
-package com.example.blog.domain.user.service;
+package com.example.blog.user.service;
 
-import com.example.blog.domain.user.entity.CustomUserPrincipal;
-import com.example.blog.domain.user.repository.UserRepository;
+import com.example.blog.user.entity.CustomUserPrincipal;
+import com.example.blog.user.entity.User;
+import com.example.blog.user.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
-import org.springframework.security.core.authority.SimpleGrantedAuthority;
-import org.springframework.security.core.userdetails.User;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.stereotype.Service;
-
-import java.util.List;
 
 @Service
 @RequiredArgsConstructor
@@ -20,7 +17,7 @@ public class CustomUserDetailsService implements UserDetailsService {
 
     @Override
     public UserDetails loadUserByUsername(String email) throws UsernameNotFoundException {
-        com.example.blog.domain.user.entity.User user = userRepository.findByEmail(email)
+        User user = userRepository.findByEmail(email)
                 .orElseThrow(() -> new UsernameNotFoundException("사용자를 찾을 수 없습니다."));
 
         // User 엔티티가 바로 UserDetails를 구현해도 되고,

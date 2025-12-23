@@ -1,9 +1,9 @@
-package com.example.blog.domain.user.service;
+package com.example.blog.user.service;
 
-import com.example.blog.domain.user.dto.SignupRequest;
-import com.example.blog.domain.user.entity.User;
-import com.example.blog.domain.user.entity.UserRole;
-import com.example.blog.domain.user.repository.UserRepository;
+import com.example.blog.user.presentation.dto.request.SignupRequest;
+import com.example.blog.user.entity.User;
+import com.example.blog.user.entity.UserRole;
+import com.example.blog.user.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;

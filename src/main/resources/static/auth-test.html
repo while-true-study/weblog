@@ -105,24 +105,22 @@
         const email = document.getElementById('login-email').value;
         const password = document.getElementById('login-password').value;
 
-        try {
-            const res = await fetch(`${baseUrl}/login`, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify({ email, password })
-            });
+        const res = await fetch(`${baseUrl}/login`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            // 같은 오리진이면 없어도 되지만, 습관적으로 넣어도 OK
+            credentials: 'include',
+            body: JSON.stringify({ email, password })
+        });
 
-            const json = await res.json();
-            log(json);
+        const json = await res.json();
+        log(json);
 
-            if (json.success && json.data && json.data.accessToken) {
-                accessToken = json.data.accessToken;
-                showToken();
-            }
-        } catch (e) {
-            log('로그인 요청 중 에러: ' + e);
+        if (json.success && json.data?.accessToken) { // refreshToken은 JS로 노출을 안하는 편이라고 함. 나중에 수정
+            accessToken = json.data.accessToken;
+            const refreshToken = json.data.refreshToken; // 이제 존재함
+            document.getElementById('current-token').textContent =
+                `accessToken:\n${accessToken}\n\nrefreshToken:\n${refreshToken ?? '(없음)'}`;
         }
     }
 
@@ -132,19 +130,14 @@
             return;
         }
 
-        try {
-            const res = await fetch(`${baseUrl}/me`, {
-                method: 'GET',
-                headers: {
-                    'Authorization': `Bearer ${accessToken}`
-                }
-            });
+        const res = await fetch(`${baseUrl}/me`, {
+            method: 'GET',
+            headers: { 'Authorization': `Bearer ${accessToken}` },
+            credentials: 'include'
+        });
 
-            const json = await res.json();
-            log(json);
-        } catch (e) {
-            log('/me 요청 중 에러: ' + e);
-        }
+        const json = await res.json();
+        log(json);
     }
 
     // 초기 화면에서 토큰 표시

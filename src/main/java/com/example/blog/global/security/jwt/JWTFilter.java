@@ -1,6 +1,6 @@
 package com.example.blog.global.security.jwt;
 
-import com.example.blog.domain.user.service.CustomUserDetailsService;
+import com.example.blog.user.service.CustomUserDetailsService;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
