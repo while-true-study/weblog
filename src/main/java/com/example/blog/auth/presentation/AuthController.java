@@ -7,6 +7,9 @@ import com.example.blog.user.presentation.dto.request.LoginRequest;
 import com.example.blog.user.presentation.dto.request.SignupRequest;
 import com.example.blog.user.presentation.dto.response.UserResponse;
 import com.example.blog.user.service.UserService;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.security.SecurityRequirement;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpHeaders;
@@ -18,6 +21,7 @@ import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
+@Tag(name = "Auth", description = "회원가입/로그인/본인 조회 API")
 @RestController
 @RequestMapping("/api/v1/auth")
 @RequiredArgsConstructor
@@ -29,12 +33,32 @@ public class AuthController {
 
     private static final long ACCESS_TOKEN_EXPIRE_MS = 1000L * 60 * 60;
 
+    @Operation(
+            summary = "회원가입",
+            description = "이메일/비밀번호/닉네임으로 회원가입합니다.",
+            security = {} // 로그인 전이므로 문서상 인증 제거
+    )
     @PostMapping("/signup")
     public ApiResponse<Void> signup(@RequestBody SignupRequest request) {
         userService.signup(request);
         return ApiResponse.success(null);
     }
 
+    @Operation(
+            summary = "로그인",
+            description = "이메일, 비밀번호로 인증후 AccessToken, RefreshToken 발급",
+            security = {} // 로그인전 이므로 문서상 인증 제거
+    )
+    @io.swagger.v3.oas.annotations.responses.ApiResponses({
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(
+                    responseCode = "200",
+                    description = "성공"
+            ),
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(
+                    responseCode = "401",
+                    description = "인증 실패"
+            )
+    })
     @PostMapping("/login")
     public ApiResponse<TokenResponse> login(@RequestBody LoginRequest request,
                                             HttpServletResponse response) {
@@ -70,6 +94,11 @@ public class AuthController {
         return ApiResponse.success(new TokenResponse(accessToken, refreshToken));
     }
 
+    @Operation(
+            summary = "내 정보 조회",
+            description = "Authorization: Bearer {accessToken} 필요"
+    )
+    @SecurityRequirement(name = "bearerAuth") // JWT필요하다는 것
     @GetMapping("/me")
     public ApiResponse<UserResponse> me(@AuthenticationPrincipal CustomUserPrincipal principal) {
         return ApiResponse.success(

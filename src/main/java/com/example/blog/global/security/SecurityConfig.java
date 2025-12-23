@@ -1,8 +1,8 @@
 package com.example.blog.global.security;
 
-import com.example.blog.user.service.CustomUserDetailsService;
 import com.example.blog.global.security.jwt.JWTFilter;
 import com.example.blog.global.security.jwt.JWTUtil;
+import com.example.blog.user.service.CustomUserDetailsService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -72,7 +72,12 @@ public class SecurityConfig {
                         .requestMatchers(
                                 "/api/v1/auth/signup",
                                 "/api/v1/auth/login",
-                                "/auth-test.html"
+                                "/auth-test.html",
+
+                                // swagger
+                                "/swagger-ui/**",
+                                "/swagger-ui.html",
+                                "/v3/api-docs/**"
                         ).permitAll()
                         .requestMatchers("/admin/**").hasRole("ADMIN")
                         .anyRequest().authenticated()
