@@ -12,6 +12,6 @@ public class AuthExceptionHandler {
     @ResponseStatus(UNAUTHORIZED)
     @ExceptionHandler(AuthenticationException.class)
     public ApiResponse<Void> handleAuth(AuthenticationException e) {
-        return ApiResponse.fail("로그인 실패: " + e.getMessage());
+        return ApiResponse.fail("로그인 실패: " , e.getMessage());
     }
 }

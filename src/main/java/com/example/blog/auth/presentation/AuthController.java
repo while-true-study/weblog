@@ -5,6 +5,7 @@ import com.example.blog.global.security.jwt.JWTUtil;
 import com.example.blog.user.entity.CustomUserPrincipal;
 import com.example.blog.user.presentation.dto.request.LoginRequest;
 import com.example.blog.user.presentation.dto.request.SignupRequest;
+import com.example.blog.user.presentation.dto.response.LoginResponse;
 import com.example.blog.user.presentation.dto.response.UserResponse;
 import com.example.blog.user.service.UserService;
 import io.swagger.v3.oas.annotations.Operation;
@@ -60,7 +61,7 @@ public class AuthController {
             )
     })
     @PostMapping("/login")
-    public ApiResponse<TokenResponse> login(@RequestBody LoginRequest request,
+    public ApiResponse<LoginResponse> login(@RequestBody LoginRequest request,
                                             HttpServletResponse response) {
 
         Authentication auth = authenticationManager.authenticate(
@@ -91,7 +92,7 @@ public class AuthController {
 
         response.addHeader(HttpHeaders.SET_COOKIE, cookie.toString());
 
-        return ApiResponse.success(new TokenResponse(accessToken, refreshToken));
+        return ApiResponse.success(new LoginResponse(accessToken, refreshToken));
     }
 
     @Operation(
@@ -104,8 +105,5 @@ public class AuthController {
         return ApiResponse.success(
                 new UserResponse(principal.getId(), principal.getEmail(), principal.getNickname())
         );
-    }
-
-    public record TokenResponse(String accessToken, String refreshToken) {
     }
 }

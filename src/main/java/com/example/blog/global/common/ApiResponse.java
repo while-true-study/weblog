@@ -8,17 +8,19 @@ import lombok.Getter;
 public class ApiResponse<T> {
     private boolean success;
     private T data;
-    private String error;
+    private ErrorBody error;
 
     public static <T> ApiResponse<T> success(T data) {
-        return ApiResponse.of(true, data, null);
+        return new ApiResponse<>(true, data, null);
     }
 
-    public static <T> ApiResponse<T> error(String message) {
-        return ApiResponse.of(false, null, message);
+    public static <T> ApiResponse<T> fail(String code, String message) {
+        ApiResponse<T> r = new ApiResponse<>(false, null, new ErrorBody(code, message));
+        r.success = false;
+        r.data = null;
+        r.error = new ErrorBody(code, message);
+        return r;
     }
 
-    public static <T> ApiResponse<T> fail(String message) {
-        return ApiResponse.of(false, null, message);
-    }
+    public record ErrorBody(String code, String message) {}
 }
