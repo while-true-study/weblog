@@ -1,25 +1,33 @@
 package com.example.blog.tag.entity;
 
 import com.example.blog.post.entity.Post;
-import com.example.blog.user.entity.User;
 import jakarta.persistence.*;
+import lombok.AccessLevel;
 import lombok.Getter;
-import lombok.Setter;
+import lombok.NoArgsConstructor;
 
 @Entity
+@Table(name = "post_tag", uniqueConstraints = {
+        @UniqueConstraint(name = "uk_post_tag", columnNames = {"post_id", "tag_id"})
+})
 @Getter
-@Setter
-@Table(name = "post_tags")
+@NoArgsConstructor(access = AccessLevel.PROTECTED)
 public class PostTag {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long postTagId;
+    private Long id;
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    private Post postId;
+    @ManyToOne(fetch = FetchType.LAZY, optional = false)
+    @JoinColumn(name = "post_id")
+    private Post post;
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    private User userId;
+    @ManyToOne(fetch = FetchType.LAZY, optional = false)
+    @JoinColumn(name = "tag_id")
+    private Tag tag;
 
+    public PostTag(Post post, Tag tag) {
+        this.post = post;
+        this.tag = tag;
+    }
 }

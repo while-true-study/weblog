@@ -1,12 +1,16 @@
 package com.example.blog.post.entity;
 
 import com.example.blog.categories.entity.Categories;
+import com.example.blog.tag.entity.PostTag;
+import com.example.blog.tag.entity.Tag;
 import com.example.blog.user.entity.User;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
 
 import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.List;
 
 @Entity
 @Getter
@@ -18,12 +22,19 @@ public class Post {
     private Long postId;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(nullable = false)
+    @JoinColumn(name = "author_id", nullable = false)
     private User author;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(nullable = false)
-    private Categories categoriesId;
+    @JoinColumn(name = "category_id", nullable = false)
+    private Categories category;
+
+    @OneToMany(mappedBy = "post", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<PostTag> postTags = new ArrayList<>();
+
+    public void addTag(Tag tag) {
+        this.postTags.add(new PostTag(this, tag));
+    }
 
     private String title;
 
