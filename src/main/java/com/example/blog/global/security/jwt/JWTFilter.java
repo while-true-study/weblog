@@ -33,7 +33,7 @@ public class JWTFilter extends OncePerRequestFilter {
             return;
         }
 
-        String token = header.substring(7);
+                String token = header.substring(7);
 
         try {
             // 만료면 401로 종료 (서버 에러로 터뜨리지 않음)
