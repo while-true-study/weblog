@@ -36,3 +36,20 @@ out/
 
 ### VS Code ###
 .vscode/
+
+### 프론트 코드 ignore ###
+FE/.env
+FE/.env.*
+!FE/.env.example
+
+FE/node_modules/
+FE/dist/
+FE/.vite/
+FE/coverage/
+FE/.cache/
+FE/.parcel-cache/
+FE/.eslintcache
+FE/.turbo/
+FE/.next/
+FE/out/
+FE/.vercel/
