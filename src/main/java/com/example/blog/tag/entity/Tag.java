@@ -22,4 +22,10 @@ public class Tag {
     public Tag(String tagName) {
         this.tagName = tagName;
     }
+
+    public static Tag of(String tagName) {
+        Tag t = new Tag();
+        t.tagName = tagName;
+        return t;
+    }
 }

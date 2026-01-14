@@ -36,6 +36,10 @@ public class Post {
         this.postTags.add(new PostTag(this, tag));
     }
 
+    public void clearTags() {
+        this.postTags.clear();
+    }
+
     private String title;
 
     @Lob
