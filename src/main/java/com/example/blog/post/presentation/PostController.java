@@ -1,11 +1,10 @@
 package com.example.blog.post.presentation;
 
 import com.example.blog.global.common.ApiResponse;
-import com.example.blog.post.presentation.dto.response.PageResponse;
-import com.example.blog.post.presentation.dto.response.PostDetailDto;
-import com.example.blog.post.presentation.dto.response.PostListItemDto;
-import com.example.blog.post.presentation.dto.response.PostSearchCond;
+import com.example.blog.post.presentation.dto.request.PostPublishedDto;
+import com.example.blog.post.presentation.dto.response.*;
 import com.example.blog.post.service.PostService;
+import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
@@ -38,5 +37,12 @@ public class PostController {
     @GetMapping("/{postId}")
     public ApiResponse<PostDetailDto> getPostDetail(@PathVariable Long postId) {
         return ApiResponse.success(postService.getPost(postId));
+    }
+
+//    @SecurityRequirement(name = "bearerAuth") // JWT필요하다는 것
+    @PostMapping
+    public ApiResponse<PostCreateResponse> post(@RequestBody PostPublishedDto req) {
+        PostCreateResponse postCreateResponse =  postService.createPost(req);
+        return ApiResponse.success(postCreateResponse);
     }
 }
