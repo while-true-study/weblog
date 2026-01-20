@@ -26,8 +26,8 @@ public class Post {
     private User author;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "category_id", nullable = false)
-    private Categories category;
+    @JoinColumn(name = "category_id", nullable = true)
+    private Categories category; // series
 
     @OneToMany(mappedBy = "post", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<PostTag> postTags = new ArrayList<>();

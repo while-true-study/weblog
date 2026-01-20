@@ -14,6 +14,8 @@ import com.example.blog.post.repository.spec.PostSpecs;
 import com.example.blog.tag.entity.PostTag;
 import com.example.blog.tag.entity.Tag;
 import com.example.blog.tag.repository.TagRepository;
+import com.example.blog.user.entity.User;
+import com.example.blog.user.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -25,12 +27,13 @@ import java.util.List;
 
 @Service
 @RequiredArgsConstructor
-@Transactional(readOnly = true)
+@Transactional
 public class PostServiceImpl implements PostService {
 
     private final PostRepository postRepository;
     private final CategoriesRepository categoriesRepository;
     private final TagRepository tagRepository;
+    private final UserRepository userRepository;
 
     @Override
     public Page<PostListItemDto> getPosts(PostSearchCond cond, Pageable pageable) {
@@ -53,12 +56,17 @@ public class PostServiceImpl implements PostService {
     }
 
     @Override
-    public PostCreateResponse createPost(PostPublishedDto postPublishedDto) {
-        Categories category = categoriesRepository.findByCategoriesName(
-                postPublishedDto.category()).orElseThrow(() -> new IllegalArgumentException("카테고리를 찾을수 없음"));
+    public PostCreateResponse createPost(PostPublishedDto postPublishedDto, String username) {
+//        Categories category = categoriesRepository.findByCategoriesName(
+//                postPublishedDto.category()).orElseThrow(() -> new IllegalArgumentException("카테고리를 찾을수 없음"));
+
+        User author = userRepository.findByEmail(username) // 또는 findByUsername
+                .orElseThrow(() -> new IllegalArgumentException("유저를 찾을 수 없음"));
+
         Post post = new Post();
-        post.setCategory(category);
+//        post.setCategory(category);
         post.setTitle(postPublishedDto.title());
+        post.setAuthor(author);
         post.setContent(postPublishedDto.content());
         post.setPostStatus(PostStatus.PUBLISHED);
 
