@@ -12,19 +12,6 @@ ALTER TABLE user AUTO_INCREMENT = 4;
 
 
 -- =========================
--- CATEGORIES
--- =========================
-INSERT INTO categories (categories_id, categories_name)
-VALUES
-    (1, 'Spring'),
-    (2, 'Java'),
-    (3, 'Database'),
-    (4, 'DevOps');
-
-ALTER TABLE categories AUTO_INCREMENT = 5;
-
-
--- =========================
 -- TAGS
 -- =========================
 INSERT INTO tags (tag_id, tag_name)
@@ -44,7 +31,6 @@ ALTER TABLE tags AUTO_INCREMENT = 6;
 INSERT INTO post (
     post_id,
     author_id,
-    category_id,
     title,
     content,
     post_status,
@@ -55,9 +41,9 @@ INSERT INTO post (
     deleted_at
 )
 VALUES
-    (1, 2, 1, 'JPA 연관관계 기초', '내용: ManyToOne / OneToMany 정리', 'PUBLISHED', 10, 2, NOW(), NOW(), NULL),
-    (2, 2, 2, 'Java 컬렉션 정리', '내용: List/Set/Map 차이', 'PUBLISHED', 3, 0, NOW(), NOW(), NULL),
-    (3, 3, 3, 'MySQL 인덱스 기초', '내용: B-Tree 인덱스와 쿼리 플랜', 'DRAFT', 0, 0, NOW(), NOW(), NULL);
+    (1, 2, 'JPA 연관관계 기초', '내용: ManyToOne / OneToMany 정리', 'PUBLISHED', 10, 2, NOW(), NOW(), NULL),
+    (2, 2, 'Java 컬렉션 정리', '내용: List/Set/Map 차이', 'PUBLISHED', 3, 0, NOW(), NOW(), NULL),
+    (3, 3, 'MySQL 인덱스 기초', '내용: B-Tree 인덱스와 쿼리 플랜', 'DRAFT', 0, 0, NOW(), NOW(), NULL);
 
 ALTER TABLE post AUTO_INCREMENT = 4;
 
