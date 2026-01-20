@@ -1,7 +1,5 @@
 package com.example.blog.post.service;
 
-import com.example.blog.categories.entity.Categories;
-import com.example.blog.categories.repository.CategoriesRepository;
 import com.example.blog.post.entity.Post;
 import com.example.blog.post.entity.PostStatus;
 import com.example.blog.post.presentation.dto.request.PostPublishedDto;
@@ -11,7 +9,8 @@ import com.example.blog.post.presentation.dto.response.PostListItemDto;
 import com.example.blog.post.presentation.dto.response.PostSearchCond;
 import com.example.blog.post.repository.PostRepository;
 import com.example.blog.post.repository.spec.PostSpecs;
-import com.example.blog.tag.entity.PostTag;
+import com.example.blog.series.entity.Series;
+import com.example.blog.series.repository.SeriesRepository;
 import com.example.blog.tag.entity.Tag;
 import com.example.blog.tag.repository.TagRepository;
 import com.example.blog.user.entity.User;
@@ -23,7 +22,7 @@ import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.List;
+import java.time.LocalDateTime;
 
 @Service
 @RequiredArgsConstructor
@@ -31,9 +30,9 @@ import java.util.List;
 public class PostServiceImpl implements PostService {
 
     private final PostRepository postRepository;
-    private final CategoriesRepository categoriesRepository;
     private final TagRepository tagRepository;
     private final UserRepository userRepository;
+    private final SeriesRepository seriesRepository;
 
     @Override
     public Page<PostListItemDto> getPosts(PostSearchCond cond, Pageable pageable) {
@@ -57,18 +56,24 @@ public class PostServiceImpl implements PostService {
 
     @Override
     public PostCreateResponse createPost(PostPublishedDto postPublishedDto, String username) {
-//        Categories category = categoriesRepository.findByCategoriesName(
-//                postPublishedDto.category()).orElseThrow(() -> new IllegalArgumentException("카테고리를 찾을수 없음"));
-
         User author = userRepository.findByEmail(username) // 또는 findByUsername
                 .orElseThrow(() -> new IllegalArgumentException("유저를 찾을 수 없음"));
 
         Post post = new Post();
-//        post.setCategory(category);
         post.setTitle(postPublishedDto.title());
         post.setAuthor(author);
         post.setContent(postPublishedDto.content());
         post.setPostStatus(PostStatus.PUBLISHED);
+        post.setViewCount(0L);
+        post.setLikeCount(0L);
+        post.setCreatedAt(LocalDateTime.now());
+        post.setUpdatedAt(LocalDateTime.now());
+
+        if (postPublishedDto.seriesId() != null) {
+            Series series = seriesRepository.findByIdAndOwner_UserId(postPublishedDto.seriesId(), author.getUserId())
+                    .orElseThrow(() -> new IllegalArgumentException("내 시리즈가 아니거나 존재하지 않음"));
+            post.setSeries(series);
+        }
 
         post.clearTags();
 

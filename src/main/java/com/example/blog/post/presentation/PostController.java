@@ -4,7 +4,6 @@ import com.example.blog.global.common.ApiResponse;
 import com.example.blog.post.presentation.dto.request.PostPublishedDto;
 import com.example.blog.post.presentation.dto.response.*;
 import com.example.blog.post.service.PostService;
-import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
@@ -17,7 +16,7 @@ import org.springframework.web.bind.annotation.*;
 
 @Tag(name = "Post", description = "게시글 관련 API")
 @RestController
-@RequestMapping("/api/v1/posts")
+@RequestMapping("/posts")
 @RequiredArgsConstructor
 public class PostController {
 
