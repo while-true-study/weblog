@@ -1,6 +1,7 @@
 package com.example.blog.post.presentation.dto.response;
 
 import com.example.blog.post.entity.Post;
+import com.example.blog.series.entity.Series;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -10,7 +11,10 @@ public record PostDetailDto(
         String title,
         String content,
         AuthorDto author,
-        String category,
+
+        Long seriesId,
+        String seriesName,
+
         List<String> tags,
         long viewCount,
         long likeCount,
@@ -18,13 +22,21 @@ public record PostDetailDto(
         LocalDateTime updateAt
 ) {
     public static PostDetailDto from(Post p) {
+        Long seriesId = (p.getSeries() != null) ? p.getSeries().getId() : null;
+        String seriesName = (p.getSeries() != null) ? p.getSeries().getName() : null;
+
         return new PostDetailDto(
                 p.getPostId(),
                 p.getTitle(),
                 p.getContent(),
                 AuthorDto.from(p.getAuthor()),
-                p.getCategory().getCategoriesName(),
-                p.getPostTags().stream().map(pt -> pt.getTag().getTagName()).toList(),
+
+                seriesId,
+                seriesName,
+
+                p.getPostTags().stream()
+                        .map(pt -> pt.getTag().getTagName())
+                        .toList(),
                 p.getViewCount(),
                 p.getLikeCount(),
                 p.getCreatedAt(),

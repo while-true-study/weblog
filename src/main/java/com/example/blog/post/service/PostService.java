@@ -13,5 +13,5 @@ public interface PostService {
 
     PostDetailDto getPost(Long id);
 
-    PostCreateResponse createPost(PostPublishedDto postPublishedDto);
+    PostCreateResponse createPost(PostPublishedDto postPublishedDto, String username);
 }

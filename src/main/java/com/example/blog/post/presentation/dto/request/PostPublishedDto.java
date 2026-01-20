@@ -3,11 +3,11 @@ package com.example.blog.post.presentation.dto.request;
 import java.util.List;
 
 public record PostPublishedDto(
-        String category,
+        String title,
         String content,
-        String status,
+        Long seriesId,
         List<String> tags,
-        String title
+        String status
 ) {
 
 }

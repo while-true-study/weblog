@@ -1,6 +1,6 @@
 package com.example.blog.post.entity;
 
-import com.example.blog.categories.entity.Categories;
+import com.example.blog.series.entity.Series;
 import com.example.blog.tag.entity.PostTag;
 import com.example.blog.tag.entity.Tag;
 import com.example.blog.user.entity.User;
@@ -26,8 +26,8 @@ public class Post {
     private User author;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "category_id", nullable = false)
-    private Categories category;
+    @JoinColumn(name = "series_id") // nullable 허용(시리즈 미지정 가능)
+    private Series series;
 
     @OneToMany(mappedBy = "post", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<PostTag> postTags = new ArrayList<>();
