@@ -25,12 +25,6 @@ public final class PostSpecs {
         };
     }
 
-    public static Specification<Post> categoryId(Long categoryId) { // 카테고리로 필터링 하는 조건
-        return (root, query, cb) -> {
-            if (categoryId == null) return cb.conjunction();
-            return cb.equal(root.get("category").get("id"), categoryId);
-        };
-    }
 
     public static Specification<Post> hasTag(String tag) { // 태그로 가진 Post 조회하는 조건
         return (root, query, cb) -> {

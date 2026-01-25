@@ -38,7 +38,6 @@ public class PostServiceImpl implements PostService {
     public Page<PostListItemDto> getPosts(PostSearchCond cond, Pageable pageable) {
         Specification<Post> spec =
                 PostSpecs.keyword(cond.keyword())
-                        .and(PostSpecs.categoryId(cond.categoryId()))
                         .and(PostSpecs.hasTag(cond.tag()))
                         .and(PostSpecs.status(PostStatus.PUBLISHED));
 
