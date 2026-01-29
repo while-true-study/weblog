@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useRef } from "react";
 import { Link } from "react-router-dom";
 import Layout from "../components/Layout";
 import { postApi } from "../services/api";
@@ -9,6 +9,9 @@ const PAGE_SIZE = 12;
 const Home: React.FC = () => {
   const [posts, setPosts] = useState<PostSummary[]>([]);
   const [loading, setLoading] = useState(true);
+
+  const [menuOpen, setMenuOpen] = useState(false);
+  const menuWrapRef = useRef<HTMLDivElement | null>(null);
 
   const [activeTab, setActiveTab] = useState<
     "trending" | "recent" | "feed" | "recommended"
@@ -22,6 +25,28 @@ const Home: React.FC = () => {
     // 탭/기간 바뀌면 0페이지부터 다시
     fetchPosts(0);
   }, [activeTab, timeRange]);
+
+  useEffect(() => {
+    const onMouseDown = (e: MouseEvent) => {
+      if (!menuOpen) return;
+      const target = e.target as Node;
+      if (menuWrapRef.current && !menuWrapRef.current.contains(target)) {
+        setMenuOpen(false);
+      }
+    };
+
+    const onKeyDown = (e: KeyboardEvent) => {
+      if (!menuOpen) return;
+      if (e.key === "Escape") setMenuOpen(false);
+    };
+
+    document.addEventListener("mousedown", onMouseDown);
+    document.addEventListener("keydown", onKeyDown);
+    return () => {
+      document.removeEventListener("mousedown", onMouseDown);
+      document.removeEventListener("keydown", onKeyDown);
+    };
+  }, [menuOpen]);
 
   const resolveSort = () => {
     if (activeTab === "trending") return "viewCount,DESC";
@@ -52,14 +77,264 @@ const Home: React.FC = () => {
       setLoading(false);
     }
   };
+  const TrendingIcon = ({ className = "" }) => (
+    <svg
+      viewBox="0 0 24 24"
+      className={className}
+      fill="none"
+      aria-hidden="true"
+    >
+      <path
+        d="M4 17l6-6 4 4 6-8"
+        stroke="currentColor"
+        strokeWidth="2"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+      <path
+        d="M20 7v6h-6"
+        stroke="currentColor"
+        strokeWidth="2"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+    </svg>
+  );
+
+  const StarIcon = ({ className = "" }) => (
+    <svg
+      viewBox="0 0 24 24"
+      className={className}
+      fill="none"
+      aria-hidden="true"
+    >
+      <path
+        d="M12 3l2.8 6.1 6.7.6-5 4.3 1.5 6.5L12 17.9 6 20.5 7.5 14 2.5 9.7l6.7-.6L12 3z"
+        stroke="currentColor"
+        strokeWidth="2"
+        strokeLinejoin="round"
+      />
+    </svg>
+  );
+
+  const ClockIcon = ({ className = "" }) => (
+    <svg
+      viewBox="0 0 24 24"
+      className={className}
+      fill="none"
+      aria-hidden="true"
+    >
+      <path
+        d="M12 7v6l4 2"
+        stroke="currentColor"
+        strokeWidth="2"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+      <path
+        d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+        stroke="currentColor"
+        strokeWidth="2"
+      />
+    </svg>
+  );
+
+  const RssIcon = ({ className = "" }) => (
+    <svg
+      viewBox="0 0 24 24"
+      className={className}
+      fill="none"
+      aria-hidden="true"
+    >
+      <path
+        d="M4 11a9 9 0 019 9"
+        stroke="currentColor"
+        strokeWidth="2"
+        strokeLinecap="round"
+      />
+      <path
+        d="M4 4a16 16 0 0116 16"
+        stroke="currentColor"
+        strokeWidth="2"
+        strokeLinecap="round"
+      />
+      <path d="M6 20a2 2 0 100-4 2 2 0 000 4z" fill="currentColor" />
+    </svg>
+  );
+
+  const DotsIcon = ({ className = "" }) => (
+    <svg
+      viewBox="0 0 24 24"
+      className={className}
+      fill="none"
+      aria-hidden="true"
+    >
+      <path
+        d="M12 6.5a1.5 1.5 0 110-3 1.5 1.5 0 010 3zM12 13.5a1.5 1.5 0 110-3 1.5 1.5 0 010 3zM12 20.5a1.5 1.5 0 110-3 1.5 1.5 0 010 3z"
+        fill="currentColor"
+      />
+    </svg>
+  );
 
   const canNext = !loading && page + 1 < totalPages;
 
+  const tabs = [
+    { key: "trending" as const, label: "트렌딩", Icon: TrendingIcon },
+    { key: "recommended" as const, label: "추천", Icon: StarIcon },
+    { key: "recent" as const, label: "최신", Icon: ClockIcon },
+    { key: "feed" as const, label: "피드", Icon: RssIcon },
+  ];
+
+  const timeRanges = [
+    { value: "week", label: "이번 주" },
+    { value: "month", label: "이번 달" },
+    { value: "year", label: "올해" },
+  ];
+
   return (
     <Layout>
-      {/* ... 기존 탭 UI 그대로 ... */}
+      <div className="flex items-center justify-between mb-6">
+        <div className="flex items-center gap-6 border-b border-gray-100 w-full">
+          {tabs.map(({ key, label, Icon }) => {
+            const active = activeTab === key;
+            return (
+              <button
+                key={key}
+                type="button"
+                onClick={() => setActiveTab(key)}
+                className={[
+                  "relative pb-3 -mb-px flex items-center gap-2 text-sm",
+                  active
+                    ? "text-gray-900 font-semibold"
+                    : "text-gray-400 hover:text-gray-700",
+                ].join(" ")}
+                aria-current={active ? "page" : undefined}
+              >
+                <Icon className="w-4 h-4" />
+                <span>{label}</span>
+                {active && (
+                  <span className="absolute left-0 right-0 -bottom-[1px] h-[2px] bg-gray-900 rounded-full" />
+                )}
+              </button>
+            );
+          })}
+          <div className="flex-1" />
+        </div>
 
-      {/* Card Grid */}
+        {/* 우측 기간 드롭다운 + 점3개 */}
+        <div className="flex items-center gap-2 ml-4">
+          <div className="relative">
+            <select
+              value={timeRange}
+              onChange={(e) => setTimeRange(e.target.value)}
+              className="appearance-none text-sm bg-white border border-gray-200 rounded-md px-3 py-2 pr-8 text-gray-700 hover:border-gray-300 focus:outline-none focus:ring-2 focus:ring-gray-200"
+            >
+              {timeRanges.map((r) => (
+                <option key={r.value} value={r.value}>
+                  {r.label}
+                </option>
+              ))}
+            </select>
+            <svg
+              viewBox="0 0 24 24"
+              className="pointer-events-none absolute right-2 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400"
+              fill="none"
+              aria-hidden="true"
+            >
+              <path
+                d="M7 10l5 5 5-5"
+                stroke="currentColor"
+                strokeWidth="2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              />
+            </svg>
+          </div>
+
+          {/* 점3개 + 메뉴 */}
+          <div className="relative" ref={menuWrapRef}>
+            <button
+              type="button"
+              onClick={() => setMenuOpen((v) => !v)}
+              className="w-9 h-9 grid place-items-center rounded-md border border-transparent text-gray-500 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-gray-200"
+              aria-label="더보기"
+              aria-expanded={menuOpen}
+            >
+              <svg
+                viewBox="0 0 24 24"
+                className="w-5 h-5"
+                fill="none"
+                aria-hidden="true"
+              >
+                <path
+                  d="M12 6.5a1.5 1.5 0 110-3 1.5 1.5 0 010 3zM12 13.5a1.5 1.5 0 110-3 1.5 1.5 0 010 3zM12 20.5a1.5 1.5 0 110-3 1.5 1.5 0 010 3z"
+                  fill="currentColor"
+                />
+              </svg>
+            </button>
+
+            {menuOpen && (
+              <div
+                className="absolute right-0 mt-2 w-60 bg-white border border-gray-200 rounded-lg shadow-lg overflow-hidden z-50"
+                role="menu"
+              >
+                {/* 메뉴 아이템 */}
+                <Link
+                  to="/notice"
+                  onClick={() => setMenuOpen(false)}
+                  className="block px-4 py-3 text-sm text-gray-800 hover:bg-gray-50"
+                  role="menuitem"
+                >
+                  공지사항
+                </Link>
+
+                <Link
+                  to="/tags"
+                  onClick={() => setMenuOpen(false)}
+                  className="block px-4 py-3 text-sm text-gray-800 hover:bg-gray-50"
+                  role="menuitem"
+                >
+                  태그 목록
+                </Link>
+
+                <Link
+                  to="/policy"
+                  onClick={() => setMenuOpen(false)}
+                  className="block px-4 py-3 text-sm text-gray-800 hover:bg-gray-50"
+                  role="menuitem"
+                >
+                  서비스 정책
+                </Link>
+
+                <a
+                  href="https://slack.com"
+                  target="_blank"
+                  rel="noreferrer"
+                  className="block px-4 py-3 text-sm text-gray-800 hover:bg-gray-50"
+                  role="menuitem"
+                  onClick={() => setMenuOpen(false)}
+                >
+                  Slack
+                </a>
+
+                <div className="h-px bg-gray-100" />
+
+                {/* 문의 섹션 */}
+                <div className="px-4 py-3">
+                  <div className="text-sm font-medium text-gray-800">문의</div>
+                  <a
+                    href="mailto:aodaod128@naver.com"
+                    className="text-sm text-gray-500 hover:underline"
+                    onClick={() => setMenuOpen(false)}
+                  >
+                    contact@Maeng.com
+                  </a>
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
       <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-6">
         {loading
           ? Array.from({ length: 10 }).map((_, i) => (
