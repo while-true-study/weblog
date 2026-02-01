@@ -47,6 +47,40 @@ VALUES
 
 ALTER TABLE post AUTO_INCREMENT = 4;
 
+SET SESSION cte_max_recursion_depth = 100000;
+
+-- 2) 대량 더미 데이터 삽입 (post_id는 AUTO_INCREMENT로 자동 생성)
+INSERT INTO post (
+    author_id,
+    title,
+    content,
+    post_status,
+    view_count,
+    like_count,
+    created_at,
+    updated_at,
+    deleted_at
+)
+WITH RECURSIVE seq AS (
+    SELECT 1 AS n
+    UNION ALL
+    SELECT n + 1 FROM seq WHERE n < 100000
+)
+SELECT
+    CASE WHEN n % 5 = 0 THEN 3 ELSE 2 END AS author_id,             -- author_id: 2 또는 3만 사용
+    CONCAT('더미 글 #', n) AS title,
+    CONCAT('내용: 더미 데이터 ', n, ' - 인덱스/부하 테스트용') AS content,
+    CASE WHEN n % 10 = 0 THEN 'DRAFT' ELSE 'PUBLISHED' END AS post_status, -- 90% 발행, 10% 초안
+    FLOOR(RAND(n) * 200000) AS view_count,                           -- 조회수 랜덤
+    FLOOR(RAND(n * 7) * 5000) AS like_count,                         -- 좋아요 랜덤
+    NOW() - INTERVAL (n % 180) DAY - INTERVAL (n % 86400) SECOND AS created_at,
+    NOW() - INTERVAL (n % 180) DAY AS updated_at,
+    NULL AS deleted_at
+FROM seq;
+
+-- 3) 통계 갱신(옵티마이저가 플랜 잘 잡게)
+ANALYZE TABLE post;
+
 
 -- =========================
 -- POST_TAG (N:M via join table)
