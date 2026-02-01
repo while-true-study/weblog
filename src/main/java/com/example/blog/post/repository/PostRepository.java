@@ -16,8 +16,11 @@ public interface PostRepository extends JpaRepository<Post, Long>, JpaSpecificat
     int incrementViewCount(@Param("id") Long id);
 
     @Modifying
+    @Query("update Post p set p.viewCount = p.viewCount + 1 where p.postId = :id")
+    int incrementViewCount2(@Param("id") Long id);
+
+    @Modifying
     @Query("select Post p from Post where postStatus = 'PUBLISHED'" )
     List<Post> findPublishPosts();
-
 
 }

@@ -26,14 +26,16 @@ import java.time.LocalDateTime;
 
 @Service
 @RequiredArgsConstructor
-@Transactional
 public class PostServiceImpl implements PostService {
 
     private final PostRepository postRepository;
     private final TagRepository tagRepository;
     private final UserRepository userRepository;
     private final SeriesRepository seriesRepository;
+    private final ViewCountService viewCountService;
 
+
+    @Transactional(readOnly = true)
     @Override
     public Page<PostListItemDto> getPosts(PostSearchCond cond, Pageable pageable) {
         Specification<Post> spec =
@@ -47,12 +49,13 @@ public class PostServiceImpl implements PostService {
     }
 
     @Override
-    @Transactional
+    @Transactional(readOnly = true)
     public PostDetailDto getPost(Long id) {
-        postRepository.incrementViewCount(id); // 조회수 증가
+        viewCountService.increment(id);
         return PostDetailDto.from(postRepository.findById(id).orElse(null));
     }
 
+    @Transactional
     @Override
     public PostCreateResponse createPost(PostPublishedDto postPublishedDto, String username) {
         User author = userRepository.findByEmail(username) // 또는 findByUsername
