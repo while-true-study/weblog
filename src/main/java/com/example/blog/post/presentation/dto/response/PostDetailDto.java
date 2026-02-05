@@ -21,7 +21,7 @@ public record PostDetailDto(
         LocalDateTime createdAt,
         LocalDateTime updateAt
 ) {
-    public static PostDetailDto from(Post p) {
+    public static PostDetailDto from(Post p, long viewCount) {
         Long seriesId = (p.getSeries() != null) ? p.getSeries().getId() : null;
         String seriesName = (p.getSeries() != null) ? p.getSeries().getName() : null;
 
@@ -37,7 +37,7 @@ public record PostDetailDto(
                 p.getPostTags().stream()
                         .map(pt -> pt.getTag().getTagName())
                         .toList(),
-                p.getViewCount(),
+                viewCount,
                 p.getLikeCount(),
                 p.getCreatedAt(),
                 p.getUpdatedAt()

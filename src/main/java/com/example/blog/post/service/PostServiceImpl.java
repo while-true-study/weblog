@@ -32,28 +32,30 @@ public class PostServiceImpl implements PostService {
     private final TagRepository tagRepository;
     private final UserRepository userRepository;
     private final SeriesRepository seriesRepository;
-    private final ViewCountService viewCountService;
+    private final RedisViewCounter redisViewCounter;
+//    private final DbShardViewCounter viewCountService; // 샤딩 버전
 
 
     @Transactional(readOnly = true)
     @Override
     public Page<PostListItemDto> getPosts(PostSearchCond cond, Pageable pageable) {
         Specification<Post> spec =
-                PostSpecs.keyword(cond.keyword())
-                        .and(PostSpecs.hasTag(cond.tag()))
+                PostSpecs.hasTag(cond.tag())
                         .and(PostSpecs.status(PostStatus.PUBLISHED));
-
 
         return postRepository.findAll(spec, pageable)
                 .map(PostListItemDto::from);
     }
 
-    @Transactional
     @Override
+    @Transactional(readOnly = true)
     public PostDetailDto getPost(Long id) {
-        viewCountService.incrementView(id);   // 샤딩 카운터로 증가 (post 테이블 UPDATE 제거)
+//        viewCountService.increment(id);   // 샤딩 카운터로 증가 (post 테이블 UPDATE 제거)
+        redisViewCounter.increment(id); // Redis에서 조회수 + 랭킹 증가
         Post post = postRepository.findById(id).orElse(null);
-        return PostDetailDto.from(post);
+
+        long viewCount = redisViewCounter.getViewCount(id);
+        return PostDetailDto.from(post, viewCount);
     }
 
     @Transactional
@@ -67,7 +69,9 @@ public class PostServiceImpl implements PostService {
         post.setAuthor(author);
         post.setContent(postPublishedDto.content());
         post.setPostStatus(PostStatus.PUBLISHED);
-        post.setViewCount(0L);
+
+        post.setViewCount(0L); // 의미없긴함
+
         post.setLikeCount(0L);
         post.setCreatedAt(LocalDateTime.now());
         post.setUpdatedAt(LocalDateTime.now());
@@ -92,7 +96,8 @@ public class PostServiceImpl implements PostService {
                     });
         }
         Post saved = postRepository.save(post);
-        viewCountService.initShards(saved.getPostId());
+
+//        viewCountService.initShards(saved.getPostId()); // 샤딩
         return PostCreateResponse.from(saved);
     }
 }
