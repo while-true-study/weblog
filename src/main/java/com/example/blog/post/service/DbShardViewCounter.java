@@ -1,6 +1,5 @@
 package com.example.blog.post.service;
 
-import com.example.blog.post.repository.PostRepository;
 import com.example.blog.post.repository.PostViewCounterShardRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.jdbc.core.JdbcTemplate;
@@ -14,17 +13,12 @@ import java.util.concurrent.ThreadLocalRandom;
 
 @Service
 @RequiredArgsConstructor
-public class ViewCountService {
-//    private final PostRepository postRepository;
-//    @Transactional // 또는 REQUIRES_NEW (의미를 더 강하게 주고 싶으면)
-//    public void increment(Long postId) {
-//        postRepository.incrementViewCount(postId);
-//    }
+public class DbShardViewCounter{
 
     private static final int SHARD_COUNT = 8;
 
     private final PostViewCounterShardRepository repo;
-
+    private final JdbcTemplate jdbcTemplate;
 
     // 샤딩 추가
     @Transactional
@@ -37,8 +31,6 @@ public class ViewCountService {
     public long getTotalView(Long postId) {
         return repo.sumByPostId(postId);
     }
-
-    private final JdbcTemplate jdbcTemplate;
 
     @Transactional(propagation = Propagation.MANDATORY)
     public void initShards(Long postId) {
