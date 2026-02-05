@@ -48,11 +48,12 @@ public class PostServiceImpl implements PostService {
                 .map(PostListItemDto::from);
     }
 
+    @Transactional
     @Override
-    @Transactional(readOnly = true)
     public PostDetailDto getPost(Long id) {
-        viewCountService.increment(id);
-        return PostDetailDto.from(postRepository.findById(id).orElse(null));
+        viewCountService.incrementView(id);   // 샤딩 카운터로 증가 (post 테이블 UPDATE 제거)
+        Post post = postRepository.findById(id).orElse(null);
+        return PostDetailDto.from(post);
     }
 
     @Transactional
@@ -91,6 +92,7 @@ public class PostServiceImpl implements PostService {
                     });
         }
         Post saved = postRepository.save(post);
+        viewCountService.initShards(saved.getPostId());
         return PostCreateResponse.from(saved);
     }
 }
