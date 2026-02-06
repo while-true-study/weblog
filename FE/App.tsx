@@ -6,6 +6,7 @@ import Login from "./pages/Login";
 import Signup from "./pages/Signup";
 import PostDetail from "./pages/PostDetail";
 import Write from "./pages/Write";
+import SearchPage from "./pages/SearchPage";
 import { useAuthStore } from "./store/useAuthStore";
 
 const ProtectedRoute = ({ children }: { children: React.ReactElement }) => {
@@ -26,6 +27,10 @@ const App: React.FC = () => {
 
         <Route path="/login" element={<Login />} />
         <Route path="/signup" element={<Signup />} />
+
+        <Route path="/search" element={<SearchPage />} />
+
+        {/* <Route path="/notifications" element={<NotificationsPage />} /> */}
 
         <Route
           path="/write"

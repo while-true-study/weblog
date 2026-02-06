@@ -101,6 +101,53 @@ const Home: React.FC = () => {
     </svg>
   );
 
+  const BellIcon = ({ className = "" }) => (
+    <svg
+      viewBox="0 0 24 24"
+      className={className}
+      fill="none"
+      aria-hidden="true"
+    >
+      <path
+        d="M18 8a6 6 0 10-12 0c0 7-3 9-3 9h18s-3-2-3-9"
+        stroke="currentColor"
+        strokeWidth="2"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+      <path
+        d="M13.73 21a2 2 0 01-3.46 0"
+        stroke="currentColor"
+        strokeWidth="2"
+        strokeLinecap="round"
+      />
+    </svg>
+  );
+
+  const SearchIcon = ({ className = "" }) => (
+    <svg
+      viewBox="0 0 24 24"
+      className={className}
+      fill="none"
+      aria-hidden="true"
+    >
+      <path
+        d="M11 19a8 8 0 100-16 8 8 0 000 16z"
+        stroke="currentColor"
+        strokeWidth="2"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+      <path
+        d="M21 21l-4.35-4.35"
+        stroke="currentColor"
+        strokeWidth="2"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+    </svg>
+  );
+
   const StarIcon = ({ className = "" }) => (
     <svg
       viewBox="0 0 24 24"
@@ -220,6 +267,23 @@ const Home: React.FC = () => {
           })}
           <div className="flex-1" />
         </div>
+
+        <Link
+          to="/notifications"
+          className="w-9 h-9 grid place-items-center rounded-md border border-transparent text-gray-500 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-gray-200"
+          aria-label="알림"
+        >
+          <BellIcon className="w-5 h-5" />
+        </Link>
+
+        {/* 검색 */}
+        <Link
+          to="/search"
+          className="w-9 h-9 grid place-items-center rounded-md border border-transparent text-gray-500 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-gray-200"
+          aria-label="검색"
+        >
+          <SearchIcon className="w-5 h-5" />
+        </Link>
 
         {/* 우측 기간 드롭다운 + 점3개 */}
         <div className="flex items-center gap-2 ml-4">
