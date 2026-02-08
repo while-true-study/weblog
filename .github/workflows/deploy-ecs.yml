@@ -6,12 +6,13 @@ on:
   workflow_dispatch:
 
 env:
-  AWS_REGION: ap-northeast-2
-  ECR_REPOSITORY: weblog
-  ECS_CLUSTER: weblog-cluster
-  ECS_SERVICE: weblog-service
+  AWS_REGION: ${{ vars.AWS_REGION }}
+  ECR_REPOSITORY: ${{ vars.ECR_REPOSITORY }}
+  ECS_CLUSTER: ${{ vars.ECS_CLUSTER }}
+  ECS_SERVICE: ${{ vars.ECS_SERVICE }}
   ECS_TASK_DEFINITION: .aws/ecs/task-definition.json
-  CONTAINER_NAME: weblog
+  CONTAINER_NAME: ${{ vars.CONTAINER_NAME }}
+
 
 jobs:
   deploy:
@@ -23,6 +24,15 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+
+      - name: Print deploy targets
+        run: |
+          echo "AWS_REGION=${{ env.AWS_REGION }}"
+          echo "ECR_REPOSITORY=${{ env.ECR_REPOSITORY }}"
+          echo "ECS_CLUSTER=${{ env.ECS_CLUSTER }}"
+          echo "ECS_SERVICE=${{ env.ECS_SERVICE }}"
+          echo "TASK_DEF=${{ env.ECS_TASK_DEFINITION }}"
+          echo "CONTAINER=${{ env.CONTAINER_NAME }}"
 
       # GitHub OIDC로 AWS 인증
       - name: Configure AWS credentials (OIDC)
