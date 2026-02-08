@@ -74,9 +74,19 @@ export const postApi = {
 
   toggleLike: async (id: number) => {
     return apiClient.post<ApiResponse<{ liked: boolean; likeCount: number }>>(
-      `/posts/${id}/like`
+      `/posts/${id}/like`,
     );
   },
+
+  searchPosts: (
+    params: {
+      keyword: string;
+      offset: number;
+      limit: number;
+      mode?: "infix" | "prefix";
+    },
+    config?: any,
+  ) => apiClient.get("/search/posts", { params, ...config }),
 };
 
 // Comment Services
