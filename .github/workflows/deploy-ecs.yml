@@ -5,6 +5,14 @@ on:
     tags: ["v*"]
   workflow_dispatch:
 
+env:
+  AWS_REGION: ap-northeast-2
+  ECR_REPOSITORY: weblog
+  ECS_CLUSTER: weblog-cluster
+  ECS_SERVICE: weblog-service
+  ECS_TASK_DEFINITION: .aws/ecs/task-definition.json
+  CONTAINER_NAME: weblog
+
 jobs:
   deploy:
     runs-on: ubuntu-latest
@@ -13,4 +21,46 @@ jobs:
       contents: read
 
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      # GitHub OIDC로 AWS 인증
+      - name: Configure AWS credentials (OIDC)
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.AWS_ROLE_TO_ASSUME }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Login to Amazon ECR
+        id: login-ecr
+        uses: aws-actions/amazon-ecr-login@v2
+
+      - name: Build, tag, and push image to ECR
+        id: build-image
+        env:
+          ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
+          IMAGE_TAG: ${{ github.ref_name }}   # 태그명(v1.0.0 같은거)
+        run: |
+          IMAGE_URI="$ECR_REGISTRY/${{ env.ECR_REPOSITORY }}:$IMAGE_TAG"
+          echo "IMAGE_URI=$IMAGE_URI" >> $GITHUB_OUTPUT
+
+          docker build -t "$IMAGE_URI" .
+          docker push "$IMAGE_URI"
+
+      # task-definition.json의 이미지 URI를 새로 바꿈
+      - name: Render Amazon ECS task definition
+        id: render-task
+        uses: aws-actions/amazon-ecs-render-task-definition@v1
+        with:
+          task-definition: ${{ env.ECS_TASK_DEFINITION }}
+          container-name: ${{ env.CONTAINER_NAME }}
+          image: ${{ steps.build-image.outputs.IMAGE_URI }}
+
+      # ECS 새 task definition 반영 => 배포 완료까지 대기
+      - name: Deploy Amazon ECS task definition
+        uses: aws-actions/amazon-ecs-deploy-task-definition@v2
+        with:
+          task-definition: ${{ steps.render-task.outputs.task-definition }}
+          service: ${{ env.ECS_SERVICE }}
+          cluster: ${{ env.ECS_CLUSTER }}
+          wait-for-service-stability: true
