@@ -1,0 +1,45 @@
+spring:
+  profiles:
+    active: local
+
+  mvc:
+    servlet:
+      path: /api/v1
+
+  jpa:
+    hibernate:
+      ddl-auto: update
+    open-in-view: false
+    defer-datasource-initialization: true
+
+  sql:
+    init:
+      mode: never
+
+  jwt:
+    secret: ${SPRING_JWT_SECRET:}
+
+server:
+  tomcat:
+    accesslog:
+      enabled: true
+      prefix: access_log
+      suffix: .log
+      pattern: '%h %l %u %t "%r" %s %b %D'
+      buffered: false
+      directory: logs
+    basedir: .
+    mbeanregistry:
+      enabled: true
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics,threaddump
+  endpoint:
+    health:
+      show-details: always
+  server:
+    port: 8081
+

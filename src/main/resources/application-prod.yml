@@ -1,0 +1,26 @@
+spring:
+  datasource:
+    driver-class-name: com.mysql.cj.jdbc.Driver
+    url: ${SPRING_DATASOURCE_URL}
+    username: ${SPRING_DATASOURCE_USERNAME}
+    password: ${SPRING_DATASOURCE_PASSWORD}
+
+  data:
+    redis:
+      host: ${SPRING_DATA_REDIS_HOST}
+      port: ${SPRING_DATA_REDIS_PORT:6379}
+      timeout: ${SPRING_DATA_REDIS_TIMEOUT:2s}
+
+  jwt:
+    secret: ${SPRING_JWT_SECRET}
+
+# 운영 JWT 시크릿은 무조건 환경변수/시크릿으로
+# (application.yml에서 app.jwt.secret을 쓴 경우)
+app:
+  jwt:
+    secret: ${APP_JWT_SECRET}
+
+# (spring.jwt.secret을 쓰는 경우라면 이걸로)
+# spring:
+#   jwt:
+#     secret: ${SPRING_JWT_SECRET}
