@@ -91,7 +91,7 @@ SELECT
         /* 1) 핫 키워드(반복) - prefix/infix 실험 유지 */
             CASE
                 WHEN n % 100 < 20 THEN CONCAT(  -- 20%: prefix
-                        ELT((CRC32(CONCAT('k1', n)) % 24) + 1,
+                        ELT((CRC32(CONCAT('k1', n)) % 23) + 1,
                             'select','spring','redis','elasticsearch','mysql','jwt','docker','ecs','rds','locust','index','like',
                             'kafka','k8s','nginx','jpa','hibernate','query','transaction','lock','cache','search','autocomplete'
                         ),
@@ -127,7 +127,7 @@ SELECT
             CASE
                 WHEN n % 100 >= 20 AND n % 100 < 50 THEN CONCAT(
       ' - ',
-      ELT((CRC32(CONCAT('k2', n)) % 24) + 1,
+      ELT((CRC32(CONCAT('k2', n)) % 23) + 1,
         'select','spring','redis','elasticsearch','mysql','jwt','docker','ecs','rds','locust','index','like',
         'kafka','k8s','nginx','jpa','hibernate','query','transaction','lock','cache','search','autocomplete'
       )

@@ -37,8 +37,8 @@ public class SearchService {
         Pageable pageable = PageRequest.of(page, safeLimit, sort);
 
         Slice<Post> slice = "prefix".equalsIgnoreCase(mode)
-                ? postTitleSearchRepository.findByTitleStartingWithIgnoreCase(k, pageable)
-                : postTitleSearchRepository.findByTitleContainingIgnoreCase(k, pageable);
+                ? postTitleSearchRepository.searchTitlePrefix(k, pageable)
+                : postTitleSearchRepository.searchTitleInfix(k, pageable);
 
         List<PostSummaryDto> items = slice.getContent().stream()
                 .map(this::toDto)
@@ -47,7 +47,7 @@ public class SearchService {
         return OffsetResponse.of(items, safeOffset, safeLimit, slice.hasNext());
     }
 
-    private PostSummaryDto toDto(Post post) {
+    private PostSummaryDto toDto(Post post) { // Dto로 바꾸기
         return new PostSummaryDto(
                 post.getPostId(),
                 post.getTitle(),
