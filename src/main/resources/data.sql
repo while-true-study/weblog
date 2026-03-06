@@ -179,7 +179,7 @@ SELECT
     NOW() - INTERVAL (n % 180) DAY AS updated_at,
     NULL AS deleted_at
 FROM seq
-WHERE n <= 500000;
+WHERE n <= 5000000;
 
 
 -- 3) 통계 갱신
