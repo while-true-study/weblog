@@ -19,6 +19,14 @@ spring:
   jwt:
     secret: ${SPRING_JWT_SECRET:}
 
+  elasticsearch:
+    uris: http://localhost:9200
+
+logging:
+  level:
+    org.hibernate.SQL: DEBUG
+    org.hibernate.orm.jdbc.bind: TRACE
+
 server:
   tomcat:
     accesslog:
