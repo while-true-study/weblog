@@ -1,0 +1,15 @@
+{
+  "mappings": {
+    "properties": {
+      "postId": { "type": "long" },
+      "title": { "type": "text" },
+      "authorId": { "type": "long" },
+      "authorNickname": { "type": "keyword" },
+      "viewCount": { "type": "integer" },
+      "likeCount": { "type": "integer" },
+      "createdAt": { "type": "date" },
+      "postStatus": { "type": "keyword" },
+      "deletedAt": { "type": "date" }
+    }
+  }
+}
