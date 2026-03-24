@@ -3,12 +3,11 @@ package com.example.blog.post.service;
 import com.example.blog.post.entity.Post;
 import com.example.blog.post.entity.PostStatus;
 import com.example.blog.post.presentation.dto.request.PostPublishedDto;
-import com.example.blog.post.presentation.dto.response.PostCreateResponse;
-import com.example.blog.post.presentation.dto.response.PostDetailDto;
-import com.example.blog.post.presentation.dto.response.PostListItemDto;
-import com.example.blog.post.presentation.dto.response.PostSearchCond;
+import com.example.blog.post.presentation.dto.request.PostUpdateRequest;
+import com.example.blog.post.presentation.dto.response.*;
 import com.example.blog.post.repository.PostRepository;
 import com.example.blog.post.repository.spec.PostSpecs;
+import com.example.blog.search.outbox.service.PostOutboxService;
 import com.example.blog.series.entity.Series;
 import com.example.blog.series.repository.SeriesRepository;
 import com.example.blog.tag.entity.Tag;
@@ -16,6 +15,7 @@ import com.example.blog.tag.repository.TagRepository;
 import com.example.blog.user.entity.User;
 import com.example.blog.user.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.domain.Specification;
@@ -33,7 +33,10 @@ public class PostServiceImpl implements PostService {
     private final UserRepository userRepository;
     private final SeriesRepository seriesRepository;
     private final RedisViewCounter redisViewCounter;
-//    private final DbShardViewCounter viewCountService; // 샤딩 버전
+    //    private final DbShardViewCounter viewCountService; // 샤딩 버전
+    private final PostOutboxService postOutboxService;
+
+    private final ApplicationEventPublisher eventPublisher; // event 퍼블리셔
 
 
     @Transactional(readOnly = true)
@@ -97,7 +100,58 @@ public class PostServiceImpl implements PostService {
         }
         Post saved = postRepository.save(post);
 
+        postOutboxService.createCreatedEvent(saved);
+
+//        eventPublisher.publishEvent(new PostCreatedEvent(saved.getPostId())); // post넣었다는 이벤트 발행
+
 //        viewCountService.initShards(saved.getPostId()); // 샤딩
         return PostCreateResponse.from(saved);
+    }
+
+    @Transactional
+    public PostUpdateResponse updatePost(Long postId, PostUpdateRequest req, String email) {
+        Post post = postRepository.findById(postId)
+                .orElseThrow(() -> new IllegalArgumentException("게시글이 존재하지 않습니다."));
+
+        // 작성자 검증
+        if (!post.getAuthor().getEmail().equals(email)) {
+            throw new IllegalArgumentException("수정 권한이 없습니다.");
+        }
+
+        post.setTitle(req.getTitle());
+        post.setContent(req.getContent());
+        post.setUpdatedAt(LocalDateTime.now());
+        post.increaseSyncVersion();
+
+        postOutboxService.createUpdatedEvent(post);
+
+        return new PostUpdateResponse(
+                post.getPostId(),
+                post.getTitle(),
+                post.getSyncVersion(),
+                post.getUpdatedAt()
+        );
+    }
+
+    @Transactional
+    public void deletePost(Long postId, String email) {
+        Post post = postRepository.findById(postId)
+                .orElseThrow(() -> new IllegalArgumentException("게시글이 존재하지 않습니다. postId=" + postId));
+
+        validateAuthor(post, email);
+
+        if (post.getDeletedAt() != null || post.getPostStatus() == PostStatus.DELETED) {
+            throw new IllegalStateException("이미 삭제된 게시글입니다. postId=" + postId);
+        }
+
+        post.softDelete();
+        postOutboxService.createDeletedEvent(post);
+    }
+
+    private void validateAuthor(Post post, String email) {
+        User author = post.getAuthor();
+        if (author == null || author.getEmail() == null || !author.getEmail().equals(email)) {
+            throw new IllegalArgumentException("삭제/수정 권한이 없습니다.");
+        }
     }
 }

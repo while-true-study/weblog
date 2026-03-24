@@ -1,10 +1,8 @@
 package com.example.blog.post.service;
 
 import com.example.blog.post.presentation.dto.request.PostPublishedDto;
-import com.example.blog.post.presentation.dto.response.PostCreateResponse;
-import com.example.blog.post.presentation.dto.response.PostDetailDto;
-import com.example.blog.post.presentation.dto.response.PostListItemDto;
-import com.example.blog.post.presentation.dto.response.PostSearchCond;
+import com.example.blog.post.presentation.dto.request.PostUpdateRequest;
+import com.example.blog.post.presentation.dto.response.*;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 
@@ -14,4 +12,8 @@ public interface PostService {
     PostDetailDto getPost(Long id);
 
     PostCreateResponse createPost(PostPublishedDto postPublishedDto, String username);
+
+    PostUpdateResponse updatePost(Long postId, PostUpdateRequest req, String email);
+
+    void deletePost(Long postId, String email);
 }

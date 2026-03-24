@@ -2,6 +2,7 @@ package com.example.blog.post.presentation;
 
 import com.example.blog.global.common.ApiResponse;
 import com.example.blog.post.presentation.dto.request.PostPublishedDto;
+import com.example.blog.post.presentation.dto.request.PostUpdateRequest;
 import com.example.blog.post.presentation.dto.response.*;
 import com.example.blog.post.service.PostService;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -42,10 +43,30 @@ public class PostController {
 
     //    @SecurityRequirement(name = "bearerAuth") // JWT필요하다는 것
     @PostMapping
-    public ApiResponse<PostCreateResponse> post(
+    public ApiResponse<PostCreateResponse> createPost(
             @RequestBody PostPublishedDto req,
             @AuthenticationPrincipal UserDetails userDetails) {
         PostCreateResponse postCreateResponse = postService.createPost(req, userDetails.getUsername());
         return ApiResponse.success(postCreateResponse);
+    }
+
+    @PutMapping("/{postId}")
+    public ApiResponse<PostUpdateResponse> updatePost(
+            @PathVariable Long postId,
+            @RequestBody PostUpdateRequest req,
+            @AuthenticationPrincipal UserDetails userDetails
+    ) {
+        return ApiResponse.success(
+                postService.updatePost(postId, req, userDetails.getUsername())
+        );
+    }
+
+    @DeleteMapping("/{postId}")
+    public ApiResponse<Void> deletePost(
+            @PathVariable Long postId,
+            @AuthenticationPrincipal UserDetails userDetails
+    ) {
+        postService.deletePost(postId, userDetails.getUsername());
+        return ApiResponse.success(null);
     }
 }
