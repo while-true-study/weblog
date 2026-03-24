@@ -32,6 +32,25 @@ public class Post {
     @OneToMany(mappedBy = "post", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<PostTag> postTags = new ArrayList<>();
 
+    @Column(nullable = false)
+    private Long syncVersion = 1L;
+
+    public void increaseSyncVersion() {
+        if (this.syncVersion == null) {
+            this.syncVersion = 1L;
+        } else {
+            this.syncVersion += 1;
+        }
+    }
+
+    public void softDelete() {
+        LocalDateTime now = LocalDateTime.now();
+        this.postStatus = PostStatus.DELETED;
+        this.deletedAt = now;
+        this.updatedAt = now;
+        increaseSyncVersion();
+    }
+
     public void addTag(Tag tag) {
         this.postTags.add(new PostTag(this, tag));
     }
@@ -57,4 +76,19 @@ public class Post {
     private LocalDateTime updatedAt;
 
     private LocalDateTime deletedAt;
+
+    @PrePersist
+    public void prePersist() {
+        LocalDateTime now = LocalDateTime.now();
+        this.createdAt = now;
+        this.updatedAt = now;
+        if (this.viewCount == null) this.viewCount = 0L;
+        if (this.likeCount == null) this.likeCount = 0L;
+        if (this.syncVersion == null) this.syncVersion = 1L;
+    }
+
+    @PreUpdate
+    public void preUpdate() {
+        this.updatedAt = LocalDateTime.now();
+    }
 }

@@ -7,6 +7,8 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
+import java.time.LocalDateTime;
+
 @Getter
 @Setter
 @NoArgsConstructor
@@ -29,6 +31,9 @@ public class PostSearchDocument {
     @JsonProperty("authornickname")
     private String authorNickname;
 
+    @JsonProperty("version")
+    private Long version; // 검색 동기화 버전 판별용
+
     @JsonProperty("viewcount")
     private Long viewCount;
 
@@ -36,7 +41,10 @@ public class PostSearchDocument {
     private Long likeCount;
 
     @JsonProperty("createdat")
-    private String createdAt; // 나중에 필요하면 LocalDateTime/Instant로 변경 가능
+    private LocalDateTime createdAt;
+
+    @JsonProperty("updatedat")
+    private LocalDateTime updatedAt;
 
     @JsonProperty("poststatus")
     private String postStatus;

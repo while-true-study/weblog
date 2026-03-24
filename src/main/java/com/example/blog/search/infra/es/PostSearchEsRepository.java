@@ -3,6 +3,8 @@ package com.example.blog.search.infra.es;
 import co.elastic.clients.elasticsearch.ElasticsearchClient;
 import co.elastic.clients.elasticsearch._types.SortOrder;
 import co.elastic.clients.elasticsearch._types.ElasticsearchException;
+import co.elastic.clients.elasticsearch.core.DeleteResponse;
+import co.elastic.clients.elasticsearch.core.IndexResponse;
 import co.elastic.clients.elasticsearch.core.SearchResponse;
 import co.elastic.clients.elasticsearch.core.search.Hit;
 import com.example.blog.search.infra.es.document.PostSearchDocument;
@@ -17,23 +19,64 @@ import java.util.List;
 @Slf4j
 @Repository
 @RequiredArgsConstructor
-public class PostSearchEsRepository {
+public class PostSearchEsRepository { // ES 검색/저장/삭제용
 
     private static final String INDEX_NAME = "post_search_v4";
 
     private final ElasticsearchClient elasticsearchClient;
 
+    public void save(PostSearchDocument document) {
+        try {
+            IndexResponse response = elasticsearchClient.index(i -> i
+                    .index(INDEX_NAME)
+                    .id(String.valueOf(document.getPostId()))
+                    .document(document)
+            );
+
+            log.info("ES 색인 저장 완료. index={}, postId={}, result={}",
+                    INDEX_NAME, document.getPostId(), response.result());
+
+        } catch (ElasticsearchException e) {
+            log.error("ES 색인 저장 실패(ElasticsearchException). index={}, postId={}, message={}",
+                    INDEX_NAME, document.getPostId(), e.getMessage(), e);
+            throw new RuntimeException("ES 색인 저장 실패", e);
+        } catch (IOException e) {
+            log.error("ES 색인 저장 실패(IOException). index={}, postId={}",
+                    INDEX_NAME, document.getPostId(), e);
+            throw new RuntimeException("ES 색인 저장 실패", e);
+        }
+    }
+
+    public void deleteByPostId(Long postId) {
+        try {
+            DeleteResponse response = elasticsearchClient.delete(d -> d
+                    .index(INDEX_NAME)
+                    .id(String.valueOf(postId))
+            );
+
+            log.info("ES 문서 삭제 완료. index={}, postId={}, result={}",
+                    INDEX_NAME, postId, response.result());
+
+        } catch (ElasticsearchException e) {
+            log.error("ES 문서 삭제 실패(ElasticsearchException). index={}, postId={}, message={}",
+                    INDEX_NAME, postId, e.getMessage(), e);
+            throw new RuntimeException("ES 문서 삭제 실패", e);
+        } catch (IOException e) {
+            log.error("ES 문서 삭제 실패(IOException). index={}, postId={}",
+                    INDEX_NAME, postId, e);
+            throw new RuntimeException("ES 문서 삭제 실패", e);
+        }
+    }
+
     public EsSearchSliceResult searchTitle(String keyword, int offset, int limit) {
         int safeOffset = Math.max(offset, 0);
-        int safeLimit = Math.max(1, Math.min(limit, 100)); // 과도한 limit 방지
-        int fetchSize = safeLimit + 1; // hasNext 계산용
+        int safeLimit = Math.max(1, Math.min(limit, 100));
+        int fetchSize = safeLimit + 1;
 
-        // 빈 검색어 방어
         if (keyword == null || keyword.trim().isEmpty()) {
             return new EsSearchSliceResult(List.of(), false);
         }
 
-        // ES 기본 max_result_window(10000) 방어 (from + size)
         if (safeOffset + fetchSize > 10000) {
             throw new IllegalArgumentException("offset + limit exceeds ES max_result_window(10000)");
         }
@@ -49,14 +92,12 @@ public class PostSearchEsRepository {
                                             .query(keyword)
                                     ))
                                     .filter(f -> f.term(t -> t
-                                            // poststatus가 text+keyword로 매핑된 경우 안전
                                             .field("poststatus.keyword")
                                             .value("PUBLISHED")
                                     ))
                             ))
                             .sort(so -> so.field(f -> f.field("createdat").order(SortOrder.Desc)))
-                            .sort(so -> so.field(f -> f.field("postid").order(SortOrder.Desc)))
-                    ,
+                            .sort(so -> so.field(f -> f.field("postid").order(SortOrder.Desc))),
                     PostSearchDocument.class
             );
 
@@ -84,4 +125,6 @@ public class PostSearchEsRepository {
             throw new RuntimeException("ES 검색 실패(IOException)", e);
         }
     }
+
+
 }
