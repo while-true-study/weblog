@@ -161,7 +161,7 @@ public class SearchService {
                 ),
                 doc.getViewCount(),
                 doc.getLikeCount(),
-                parseCreatedAt(doc.getCreatedAt())
+                doc.getCreatedAt()
         );
     }
 

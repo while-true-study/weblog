@@ -10,7 +10,7 @@ import java.util.List;
 
 @Repository
 @RequiredArgsConstructor
-public class PostReindexJdbcRepository {
+public class PostReindexJdbcRepository { // 대량 재색인용인데 이제 안쓸듯 그냥 유물용
 
     private final JdbcTemplate jdbcTemplate;
 
