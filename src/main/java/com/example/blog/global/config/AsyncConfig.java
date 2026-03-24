@@ -12,12 +12,23 @@ import java.util.concurrent.Executor;
 public class AsyncConfig {
 
     @Bean(name = "reindexExecutor")
-    public Executor reindexExecutor() {
+    public Executor reindexExecutor() { // 재색인용
         ThreadPoolTaskExecutor executor = new ThreadPoolTaskExecutor();
-        executor.setCorePoolSize(1);      // 처음엔 1개로 시작 (안정화 후 늘리기)
-        executor.setMaxPoolSize(1);
-        executor.setQueueCapacity(10);
+        executor.setCorePoolSize(1);      // 처음엔 1개로 시작
+        executor.setMaxPoolSize(1);       // 최대로 1개
+        executor.setQueueCapacity(10);    // 작업 몰리면 10개까지 큐
         executor.setThreadNamePrefix("reindex-");
+        executor.initialize();
+        return executor;
+    }
+
+    @Bean(name = "postSyncExecutor")
+    public Executor postSyncExecutor() { // 동기용
+        ThreadPoolTaskExecutor executor = new ThreadPoolTaskExecutor();
+        executor.setCorePoolSize(2);
+        executor.setMaxPoolSize(4);
+        executor.setQueueCapacity(100);
+        executor.setThreadNamePrefix("post-sync-");
         executor.initialize();
         return executor;
     }
