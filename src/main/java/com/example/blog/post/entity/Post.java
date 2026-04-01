@@ -26,7 +26,7 @@ public class Post {
     private User author;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "series_id") // nullable 허용(시리즈 미지정 가능)
+    @JoinColumn(name = "series_id")
     private Series series;
 
     @OneToMany(mappedBy = "post", cascade = CascadeType.ALL, orphanRemoval = true)
@@ -34,6 +34,22 @@ public class Post {
 
     @Column(nullable = false)
     private Long syncVersion = 1L;
+
+    private String title;
+
+    @Lob
+    private String content;
+
+    @Enumerated(EnumType.STRING)
+    private PostStatus postStatus;
+
+    private Long viewCount;
+
+    private Long likeCount;
+
+    private LocalDateTime createdAt;
+    private LocalDateTime updatedAt;
+    private LocalDateTime deletedAt;
 
     public void increaseSyncVersion() {
         if (this.syncVersion == null) {
@@ -59,23 +75,24 @@ public class Post {
         this.postTags.clear();
     }
 
-    private String title;
+    public void increaseLikeCount() {
+        if (this.likeCount == null) {
+            this.likeCount = 0L;
+        }
+        this.likeCount += 1;
+    }
 
-    @Lob
-    private String content;
+    public void decreaseLikeCount() {
+        if (this.likeCount == null || this.likeCount <= 0L) {
+            this.likeCount = 0L;
+            return;
+        }
+        this.likeCount -= 1;
+    }
 
-    @Enumerated(EnumType.STRING)
-    private PostStatus postStatus;
-
-    private Long viewCount;
-
-    private Long likeCount;
-
-    private LocalDateTime createdAt;
-
-    private LocalDateTime updatedAt;
-
-    private LocalDateTime deletedAt;
+    public boolean isDeleted() {
+        return this.postStatus == PostStatus.DELETED;
+    }
 
     @PrePersist
     public void prePersist() {
@@ -85,10 +102,18 @@ public class Post {
         if (this.viewCount == null) this.viewCount = 0L;
         if (this.likeCount == null) this.likeCount = 0L;
         if (this.syncVersion == null) this.syncVersion = 1L;
+        if (this.postStatus == null) this.postStatus = PostStatus.PUBLISHED;
     }
 
     @PreUpdate
     public void preUpdate() {
         this.updatedAt = LocalDateTime.now();
+    }
+
+    public void increaseViewCount() {
+        if (this.viewCount == null) {
+            this.viewCount = 0L;
+        }
+        this.viewCount += 1;
     }
 }

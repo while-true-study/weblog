@@ -5,10 +5,15 @@ import com.example.blog.post.presentation.dto.request.PostPublishedDto;
 import com.example.blog.post.presentation.dto.request.PostUpdateRequest;
 import com.example.blog.post.presentation.dto.response.*;
 import com.example.blog.post.service.PostService;
+import com.example.blog.post.service.PostViewerIdResolver;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
-import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Slice;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.web.PageableDefault;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
@@ -22,26 +27,27 @@ import org.springframework.web.bind.annotation.*;
 public class PostController {
 
     private final PostService postService;
+    private final PostViewerIdResolver postViewerIdResolver;
 
+    @Operation(summary = "게시글 목록 조회", description = "검색 조건과 페이징으로 게시글 목록을 조회합니다.")
     @GetMapping
-    public ApiResponse<PageResponse<PostListItemDto>> getPosts(
-            @RequestParam(required = false) String keyword,
-            @RequestParam(required = false) Long categoryId,
-            @RequestParam(required = false) String tag,
-            @PageableDefault(size = 10, sort = "createdAt", direction = Sort.Direction.DESC)
-            Pageable pageable
-    ) {
-        PostSearchCond cond = new PostSearchCond(keyword, categoryId, tag);
-        Page<PostListItemDto> page = postService.getPosts(cond, pageable);
-        return ApiResponse.success(PageResponse.from(page));
+    public SliceResponse<PostListItemDto> getPosts(PostSearchCond cond, Pageable pageable) {
+        Slice<PostListItemDto> result = postService.getPosts(cond, pageable);
+        return SliceResponse.from(result);
     }
 
+    @Operation(summary = "게시글 상세 조회", description = "게시글 ID로 상세 내용을 조회합니다. 조회수가 중복 없이 증가합니다.")
     @GetMapping("/{postId}")
-    public ApiResponse<PostDetailDto> getPostDetail(@PathVariable Long postId) {
-        return ApiResponse.success(postService.getPost(postId));
+    public ApiResponse<PostDetailDto> getPostDetail(
+            @Parameter(description = "게시글 ID") @PathVariable Long postId,
+            HttpServletRequest request
+    ) {
+        String viewerId = postViewerIdResolver.resolve(request);
+        return ApiResponse.success(postService.getPost(postId, viewerId));
     }
 
-    //    @SecurityRequirement(name = "bearerAuth") // JWT필요하다는 것
+    @Operation(summary = "게시글 작성", description = "새 게시글을 작성합니다. (로그인 필요)")
+    @SecurityRequirement(name = "bearerAuth")
     @PostMapping
     public ApiResponse<PostCreateResponse> createPost(
             @RequestBody PostPublishedDto req,
@@ -50,9 +56,11 @@ public class PostController {
         return ApiResponse.success(postCreateResponse);
     }
 
+    @Operation(summary = "게시글 수정", description = "본인의 게시글을 수정합니다. (로그인 필요)")
+    @SecurityRequirement(name = "bearerAuth")
     @PutMapping("/{postId}")
     public ApiResponse<PostUpdateResponse> updatePost(
-            @PathVariable Long postId,
+            @Parameter(description = "게시글 ID") @PathVariable Long postId,
             @RequestBody PostUpdateRequest req,
             @AuthenticationPrincipal UserDetails userDetails
     ) {
@@ -61,9 +69,11 @@ public class PostController {
         );
     }
 
+    @Operation(summary = "게시글 삭제", description = "본인의 게시글을 삭제합니다. (로그인 필요)")
+    @SecurityRequirement(name = "bearerAuth")
     @DeleteMapping("/{postId}")
     public ApiResponse<Void> deletePost(
-            @PathVariable Long postId,
+            @Parameter(description = "게시글 ID") @PathVariable Long postId,
             @AuthenticationPrincipal UserDetails userDetails
     ) {
         postService.deletePost(postId, userDetails.getUsername());

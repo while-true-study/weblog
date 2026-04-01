@@ -5,11 +5,12 @@ import com.example.blog.post.presentation.dto.request.PostUpdateRequest;
 import com.example.blog.post.presentation.dto.response.*;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Slice;
 
 public interface PostService {
-    Page<PostListItemDto> getPosts(PostSearchCond cond, Pageable pageable);
+    Slice<PostListItemDto> getPosts(PostSearchCond cond, Pageable pageable);
 
-    PostDetailDto getPost(Long id);
+    PostDetailDto getPost(Long id, String viewerId);
 
     PostCreateResponse createPost(PostPublishedDto postPublishedDto, String username);
 
