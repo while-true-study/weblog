@@ -69,21 +69,13 @@ public class SecurityConfig {
                 )
 
                 .authorizeHttpRequests(auth -> auth
-//                        .requestMatchers(
-//                                "/api/v1/auth/signup",
-//                                "/api/v1/auth/login",
-//                                "/api/v1/posts",
-//                                "/auth-test.html",
-//
-//                                // swagger
-//                                "/swagger-ui/**",
-//                                "/swagger-ui.html",
-//                                "/v3/api-docs/**"
-//                        ).permitAll()
-//                        .requestMatchers("/admin/**").hasRole("ADMIN")
-//                        .anyRequest().authenticated()
-                                .anyRequest().permitAll()
-
+                        .requestMatchers(
+                                "/swagger-ui/**",
+                                "/swagger-ui.html",
+                                "/api/v1/v3/api-docs/**",
+                                "/api/v1/swagger-ui/**"
+                        ).permitAll()
+                        .anyRequest().permitAll()
                 )
 
                 // JWT 인증 필터만 유지

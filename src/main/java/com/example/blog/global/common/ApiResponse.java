@@ -1,5 +1,6 @@
 package com.example.blog.global.common;
 
+import com.example.blog.global.exception.ErrorCode;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 
@@ -14,12 +15,12 @@ public class ApiResponse<T> {
         return new ApiResponse<>(true, data, null);
     }
 
+    public static <T> ApiResponse<T> fail(ErrorCode errorCode) {
+        return new ApiResponse<>(false, null, new ErrorBody(errorCode.code(), errorCode.message()));
+    }
+
     public static <T> ApiResponse<T> fail(String code, String message) {
-        ApiResponse<T> r = new ApiResponse<>(false, null, new ErrorBody(code, message));
-        r.success = false;
-        r.data = null;
-        r.error = new ErrorBody(code, message);
-        return r;
+        return new ApiResponse<>(false, null, new ErrorBody(code, message));
     }
 
     public record ErrorBody(String code, String message) {}
