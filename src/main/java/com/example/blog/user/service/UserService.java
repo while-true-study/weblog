@@ -1,8 +1,10 @@
 package com.example.blog.user.service;
 
-import com.example.blog.user.presentation.dto.request.SignupRequest;
+import com.example.blog.global.exception.BlogException;
+import com.example.blog.global.exception.ErrorCode;
 import com.example.blog.user.entity.User;
 import com.example.blog.user.entity.UserRole;
+import com.example.blog.user.presentation.dto.request.SignupRequest;
 import com.example.blog.user.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -19,7 +21,7 @@ public class UserService {
 
     public void signup(SignupRequest request) {
         if (userRepository.existsByEmail(request.email())) {
-            throw new IllegalArgumentException("이미 가입된 이메일입니다.");
+            throw new BlogException(ErrorCode.DUPLICATE_EMAIL);
         }
 
         User user = User.builder() // 유저 생성

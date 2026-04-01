@@ -2,12 +2,15 @@ package com.example.blog.post.repository;
 
 import com.example.blog.post.entity.Post;
 import com.example.blog.post.entity.PostStatus;
+import jakarta.persistence.LockModeType;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Slice;
 import org.springframework.data.jpa.repository.*;
 import org.springframework.data.repository.query.Param;
 
+import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Optional;
 
 public interface PostRepository extends JpaRepository<Post, Long>, JpaSpecificationExecutor<Post> {
 
@@ -28,5 +31,19 @@ public interface PostRepository extends JpaRepository<Post, Long>, JpaSpecificat
             PostStatus postStatus,
             Pageable pageable
     );
+
+    @Lock(LockModeType.PESSIMISTIC_WRITE)
+    Optional<Post> findByPostIdAndPostStatusNot(Long postId, PostStatus postStatus);
+
+    @Query("""
+    select p
+    from Post p
+    join fetch p.author
+    where p.updatedAt >= :from
+""")
+    List<Post> findAllUpdatedAfterWithAuthor(@Param("from") LocalDateTime from);
+
+    @Query("select p from Post p join fetch p.author")
+    List<Post> findAllWithAuthor();
 
 }
