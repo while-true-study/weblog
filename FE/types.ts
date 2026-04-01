@@ -58,6 +58,13 @@ export interface PageResponse<T> {
   totalPages: number;
 }
 
+export interface SliceResponse<T> {
+  content: T[];
+  page: number;
+  size: number;
+  hasNext: boolean;
+}
+
 // Comment Types
 export interface Comment {
   id: number;

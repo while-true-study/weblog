@@ -5,7 +5,7 @@ import {
   SignupRequest,
   AuthResponse,
   User,
-  PageResponse,
+  SliceResponse,
   PostSummary,
   PostDetail,
   PostCreateRequest,
@@ -29,9 +29,11 @@ export const authApi = {
   signup: async (data: SignupRequest) => {
     return apiClient.post<ApiResponse<User>>("/auth/signup", data);
   },
+
   login: async (data: LoginRequest) => {
     return apiClient.post<ApiResponse<AuthResponse>>("/auth/login", data);
   },
+
   getMe: async () => {
     return apiClient.get<ApiResponse<User>>("/auth/me");
   },
@@ -56,12 +58,12 @@ export const postApi = {
       tag,
     } = opts ?? {};
 
-    const params: any = { page, size, sort };
+    const params: Record<string, string | number> = { page, size, sort };
     if (categoryId !== undefined) params.categoryId = categoryId;
     if (keyword) params.keyword = keyword;
     if (tag) params.tag = tag;
 
-    return apiClient.get<ApiResponse<PageResponse<PostSummary>>>("/posts", {
+    return apiClient.get<SliceResponse<PostSummary>>("/posts", {
       params,
     });
   },
@@ -88,7 +90,11 @@ export const postApi = {
     );
   },
 
-  // ===== 검색 API (경로 기반) =====
+  // ===== 검색 API =====
+  searchPostsEs: (params: SearchPostsParams, config?: any) =>
+    apiClient.get("/search/posts/es", { params, ...config }),
+
+  // ===== 레거시 (하위 호환) =====
   searchPostsInfix: (params: SearchPostsParams, config?: any) =>
     apiClient.get("/search/posts/infix", { params, ...config }),
 
@@ -100,30 +106,20 @@ export const postApi = {
 
   searchPostsFulltextBoolean: (params: SearchPostsParams, config?: any) =>
     apiClient.get("/search/posts/fulltext-boolean", { params, ...config }),
-
-  // ===== 기존 호환용 (mode 기반) =====
-  // 기존 코드가 남아있어도 바로 안 깨지게 유지
-  searchPosts: (params: LegacySearchPostsParams, config?: any) => {
-    const { mode = "infix", ...rest } = params;
-
-    if (mode === "prefix") {
-      return apiClient.get("/search/posts/prefix", { params: rest, ...config });
-    }
-
-    // 기본은 infix
-    return apiClient.get("/search/posts/infix", { params: rest, ...config });
-  },
 };
+
 // Comment Services
 export const commentApi = {
   getList: async (postId: number) => {
     return apiClient.get<ApiResponse<Comment[]>>(`/posts/${postId}/comments`);
   },
+
   create: async (postId: number, content: string) => {
     return apiClient.post<ApiResponse<null>>(`/posts/${postId}/comments`, {
       content,
     });
   },
+
   delete: async (commentId: number) => {
     return apiClient.delete<ApiResponse<null>>(`/comments/${commentId}`);
   },
