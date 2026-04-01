@@ -8,6 +8,21 @@ import { postApi, commentApi } from "../services/api";
 import { PostDetail as PostDetailType, Comment } from "../types";
 import { useAuthStore } from "../store/useAuthStore";
 
+const HeartIcon = ({ filled, className = "" }: { filled: boolean; className?: string }) => (
+  <svg
+    viewBox="0 0 24 24"
+    className={className}
+    fill={filled ? "currentColor" : "none"}
+    stroke="currentColor"
+    strokeWidth="2"
+    strokeLinecap="round"
+    strokeLinejoin="round"
+    aria-hidden="true"
+  >
+    <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z" />
+  </svg>
+);
+
 const PostDetail: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
@@ -18,6 +33,7 @@ const PostDetail: React.FC = () => {
   const [loading, setLoading] = useState(true);
 
   const [likes, setLikes] = useState(0);
+  const [liked, setLiked] = useState(false);
   const [commentContent, setCommentContent] = useState("");
   const [commentsError, setCommentsError] = useState<string | null>(null);
 
@@ -45,6 +61,7 @@ const PostDetail: React.FC = () => {
       const p = postRes.data.data;
       setPost(p);
       setLikes(p.likeCount ?? 0);
+      setLiked(false);
 
       // 2) 댓글은 실패해도 페이지 유지
       try {
@@ -70,7 +87,10 @@ const PostDetail: React.FC = () => {
     }
     try {
       const res = await postApi.toggleLike(post.id);
-      if (res.data?.success) setLikes(res.data.data.likeCount ?? likes);
+      if (res.data?.success) {
+        setLikes(res.data.data.likeCount ?? likes);
+        setLiked(res.data.data.liked);
+      }
     } catch (e) {
       console.error(e);
     }
@@ -167,9 +187,15 @@ const PostDetail: React.FC = () => {
           <div className="mt-8 flex items-center gap-3 md:hidden">
             <button
               onClick={handleToggleLike}
-              className="px-4 py-2 rounded-full border border-gray-200 hover:border-gray-400"
+              className={[
+                "flex items-center gap-2 px-4 py-2 rounded-full border transition-colors",
+                liked
+                  ? "border-red-400 bg-red-50 text-red-500"
+                  : "border-gray-200 text-gray-500 hover:border-gray-400",
+              ].join(" ")}
             >
-              좋아요 {likes}
+              <HeartIcon filled={liked} className="w-4 h-4" />
+              <span>{likes}</span>
             </button>
           </div>
 
@@ -179,12 +205,19 @@ const PostDetail: React.FC = () => {
               <div className="sticky top-28 flex flex-col items-center gap-2">
                 <button
                   onClick={handleToggleLike}
-                  className="w-12 h-12 rounded-full border border-gray-200 flex items-center justify-center hover:border-gray-400"
+                  className={[
+                    "w-12 h-12 rounded-full border flex items-center justify-center transition-colors",
+                    liked
+                      ? "border-red-400 bg-red-50 text-red-500"
+                      : "border-gray-200 text-gray-400 hover:border-gray-400",
+                  ].join(" ")}
                   aria-label="like"
                 >
-                  ❤
+                  <HeartIcon filled={liked} className="w-5 h-5" />
                 </button>
-                <div className="text-sm font-bold text-gray-700">{likes}</div>
+                <div className={["text-sm font-bold", liked ? "text-red-500" : "text-gray-700"].join(" ")}>
+                  {likes}
+                </div>
               </div>
             </div>
 
