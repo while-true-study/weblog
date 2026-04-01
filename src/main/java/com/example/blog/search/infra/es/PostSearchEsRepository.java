@@ -8,6 +8,7 @@ import co.elastic.clients.elasticsearch.core.IndexResponse;
 import co.elastic.clients.elasticsearch.core.SearchResponse;
 import co.elastic.clients.elasticsearch.core.search.Hit;
 import com.example.blog.search.infra.es.document.PostSearchDocument;
+import com.example.blog.search.repository.PostSearchRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Repository;
@@ -15,17 +16,19 @@ import org.springframework.stereotype.Repository;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 
 @Slf4j
 @Repository
 @RequiredArgsConstructor
-public class PostSearchEsRepository { // ES 검색/저장/삭제용
+public class PostSearchEsRepository implements PostSearchRepository {
 
-    private static final String INDEX_NAME = "post_search_v4";
+    private static final String INDEX_NAME = "post_search_v5";
 
     private final ElasticsearchClient elasticsearchClient;
 
-    public void save(PostSearchDocument document) {
+    @Override
+    public void upsertFullDocument(PostSearchDocument document) {
         try {
             IndexResponse response = elasticsearchClient.index(i -> i
                     .index(INDEX_NAME)
@@ -33,20 +36,21 @@ public class PostSearchEsRepository { // ES 검색/저장/삭제용
                     .document(document)
             );
 
-            log.info("ES 색인 저장 완료. index={}, postId={}, result={}",
+            log.info("ES 전체 문서 upsert 완료. index={}, postId={}, result={}",
                     INDEX_NAME, document.getPostId(), response.result());
 
         } catch (ElasticsearchException e) {
-            log.error("ES 색인 저장 실패(ElasticsearchException). index={}, postId={}, message={}",
+            log.error("ES 전체 문서 upsert 실패(ElasticsearchException). index={}, postId={}, message={}",
                     INDEX_NAME, document.getPostId(), e.getMessage(), e);
-            throw new RuntimeException("ES 색인 저장 실패", e);
+            throw new RuntimeException("ES 전체 문서 upsert 실패", e);
         } catch (IOException e) {
-            log.error("ES 색인 저장 실패(IOException). index={}, postId={}",
+            log.error("ES 전체 문서 upsert 실패(IOException). index={}, postId={}",
                     INDEX_NAME, document.getPostId(), e);
-            throw new RuntimeException("ES 색인 저장 실패", e);
+            throw new RuntimeException("ES 전체 문서 upsert 실패", e);
         }
     }
 
+    @Override
     public void deleteByPostId(Long postId) {
         try {
             DeleteResponse response = elasticsearchClient.delete(d -> d
@@ -68,6 +72,7 @@ public class PostSearchEsRepository { // ES 검색/저장/삭제용
         }
     }
 
+    @Override
     public EsSearchSliceResult searchTitle(String keyword, int offset, int limit) {
         int safeOffset = Math.max(offset, 0);
         int safeLimit = Math.max(1, Math.min(limit, 100));
@@ -126,5 +131,43 @@ public class PostSearchEsRepository { // ES 검색/저장/삭제용
         }
     }
 
+    @Override
+    public long count() {
+        try {
+            var response = elasticsearchClient.count(c -> c.index(INDEX_NAME));
+            return response.count();
+        } catch (ElasticsearchException e) {
+            log.warn("ES count 실패(ElasticsearchException). index={}, message={}", INDEX_NAME, e.getMessage());
+            return -1;
+        } catch (IOException e) {
+            log.warn("ES count 실패(IOException). index={}", INDEX_NAME, e);
+            return -1;
+        }
+    }
 
+    @Override
+    public Optional<PostSearchDocument> findByPostId(Long postId) {
+        try {
+            var response = elasticsearchClient.get(g -> g
+                            .index(INDEX_NAME)
+                            .id(String.valueOf(postId)),
+                    PostSearchDocument.class
+            );
+
+            if (!response.found() || response.source() == null) {
+                return Optional.empty();
+            }
+
+            return Optional.of(response.source());
+
+        } catch (ElasticsearchException e) {
+            log.error("ES 문서 조회 실패(ElasticsearchException). index={}, postId={}, message={}",
+                    INDEX_NAME, postId, e.getMessage(), e);
+            throw new RuntimeException("ES 문서 조회 실패", e);
+        } catch (IOException e) {
+            log.error("ES 문서 조회 실패(IOException). index={}, postId={}",
+                    INDEX_NAME, postId, e);
+            throw new RuntimeException("ES 문서 조회 실패", e);
+        }
+    }
 }
