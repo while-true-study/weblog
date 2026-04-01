@@ -21,4 +21,6 @@ public interface OutboxEventRepository extends JpaRepository<OutboxEvent, Long> 
             OutboxEventStatus status,
             LocalDateTime threshold
     );
+
+    int countByStatus(OutboxEventStatus status);
 }

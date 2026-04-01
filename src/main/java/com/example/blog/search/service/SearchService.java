@@ -154,7 +154,7 @@ public class SearchService {
         return new PostSummaryDto(
                 doc.getPostId(),
                 doc.getTitle(),
-                doc.getContentPreview() == null ? "" : doc.getContentPreview(),
+                doc.getContent() == null ? "" : doc.getContent(),
                 new PostSummaryDto.AuthorDto(
                         doc.getAuthorId(),
                         doc.getAuthorNickname()

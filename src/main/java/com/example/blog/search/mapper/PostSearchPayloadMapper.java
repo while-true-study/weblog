@@ -16,15 +16,6 @@ public class PostSearchPayloadMapper {
     public PostOutboxPayload toPayload(Post post) {
         return PostOutboxPayload.builder()
                 .postId(post.getPostId())
-                .title(post.getTitle())
-                .contentPreview(makePreview(post.getContent()))
-                .authorId(post.getAuthor().getUserId())
-                .authorNickname(post.getAuthor().getNickname())
-                .viewCount(post.getViewCount())
-                .likeCount(post.getLikeCount())
-                .createdAt(post.getCreatedAt())
-                .updatedAt(post.getUpdatedAt())
-                .postStatus(post.getPostStatus() != null ? post.getPostStatus().name() : null)
                 .version(post.getSyncVersion())
                 .build();
     }
@@ -38,11 +29,11 @@ public class PostSearchPayloadMapper {
         return normalized.substring(0, PREVIEW_LENGTH);
     }
 
-    private PostSearchDocument toDocument(Post post) {
+    public PostSearchDocument toDocument(Post post) {
         PostSearchDocument doc = new PostSearchDocument();
         doc.setPostId(post.getPostId());
         doc.setTitle(post.getTitle());
-        doc.setContentPreview(makePreview(post.getContent()));
+        doc.setContent(makePreview(post.getContent()));
         doc.setAuthorId(post.getAuthor() != null ? post.getAuthor().getUserId() : null);
         doc.setAuthorNickname(post.getAuthor() != null ? post.getAuthor().getNickname() : null);
         doc.setViewCount(post.getViewCount() != null ? post.getViewCount() : 0L);

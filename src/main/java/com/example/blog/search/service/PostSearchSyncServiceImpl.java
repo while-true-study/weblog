@@ -1,11 +1,18 @@
 package com.example.blog.search.service;
 
+import com.example.blog.post.entity.Post;
+import com.example.blog.post.entity.PostStatus;
+import com.example.blog.post.repository.PostRepository;
 import com.example.blog.search.infra.es.PostSearchEsRepository;
 import com.example.blog.search.infra.es.document.PostSearchDocument;
 import com.example.blog.search.outbox.dto.PostOutboxPayload;
+import com.example.blog.global.exception.BlogException;
+import com.example.blog.global.exception.ErrorCode;
+import com.example.blog.search.repository.PostSearchRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.Optional;
 
@@ -14,32 +21,28 @@ import java.util.Optional;
 @RequiredArgsConstructor
 public class PostSearchSyncServiceImpl implements PostSearchSyncService {
 
-    private final PostSearchEsRepository postSearchEsRepository;
+    private final PostRepository postRepository;
+    private final PostSearchRepository postSearchRepository;
 
     @Override
-    public void upsert(PostOutboxPayload payload) {
-        PostSearchDocument doc = new PostSearchDocument();
-        doc.setPostId(payload.getPostId());
-        doc.setTitle(payload.getTitle());
-        doc.setContentPreview(payload.getContentPreview());
-        doc.setAuthorId(payload.getAuthorId());
-        doc.setAuthorNickname(payload.getAuthorNickname());
-        doc.setViewCount(payload.getViewCount());
-        doc.setLikeCount(payload.getLikeCount());
-        doc.setCreatedAt(payload.getCreatedAt());
-        doc.setUpdatedAt(payload.getUpdatedAt());
-        doc.setPostStatus(payload.getPostStatus());
-        doc.setVersion(payload.getVersion());
+    @Transactional
+    public void syncPostToSearch(Long postId) {
+        Post post = postRepository.findById(postId)
+                .orElseThrow(() -> new BlogException(ErrorCode.POST_NOT_FOUND));
 
-        log.info("ES upsert 요청. postId={}, version={}", payload.getPostId(), payload.getVersion());
-        postSearchEsRepository.save(doc);
-        log.info("ES upsert 완료. postId={}, version={}", payload.getPostId(), payload.getVersion());
+        if (post.getPostStatus() == PostStatus.DELETED) {
+            postSearchRepository.deleteByPostId(postId);
+            return;
+        }
+
+        PostSearchDocument document = PostSearchDocument.from(post);
+        postSearchRepository.upsertFullDocument(document);
+
+        log.info("ES 문서 동기화 완료. postId={}, version={}", postId, document.getVersion());
     }
 
-    @Override
+    @Transactional
     public void delete(Long postId, Long version) {
-        log.info("ES delete 요청. postId={}, version={}", postId, version);
-        postSearchEsRepository.deleteByPostId(postId);
-        log.info("ES delete 완료. postId={}, version={}", postId, version);
+        postSearchRepository.deleteByPostId(postId);
     }
 }

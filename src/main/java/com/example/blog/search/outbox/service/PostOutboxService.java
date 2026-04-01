@@ -14,7 +14,6 @@ import org.springframework.stereotype.Service;
 public class PostOutboxService {
 
     private final OutboxEventRepository outboxEventRepository;
-    private final PostSearchPayloadMapper payloadMapper;
     private final OutboxPayloadSerializer serializer;
 
     public void createCreatedEvent(Post post) {
@@ -30,7 +29,11 @@ public class PostOutboxService {
     }
 
     private void save(Post post, OutboxEventType eventType) {
-        PostOutboxPayload payload = payloadMapper.toPayload(post);
+        PostOutboxPayload payload = new PostOutboxPayload(
+                post.getPostId(),
+                post.getSyncVersion()
+        );
+
         String payloadJson = serializer.serialize(payload);
 
         OutboxEvent event = new OutboxEvent(
