@@ -1,7 +1,5 @@
 package com.example.blog.search.outbox.service;
 
-import com.example.blog.search.outbox.dto.PostOutboxPayload;
-
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
@@ -14,7 +12,7 @@ public class OutboxPayloadSerializer {
 
     private final ObjectMapper objectMapper;
 
-    public String serialize(PostOutboxPayload payload) {
+    public String serialize(Object payload) {
         try {
             return objectMapper.writeValueAsString(payload);
         } catch (JsonProcessingException e) {
@@ -22,9 +20,9 @@ public class OutboxPayloadSerializer {
         }
     }
 
-    public PostOutboxPayload deserialize(String payload) {
+    public <T> T deserialize(String payload, Class<T> payloadType) {
         try {
-            return objectMapper.readValue(payload, PostOutboxPayload.class);
+            return objectMapper.readValue(payload, payloadType);
         } catch (JsonProcessingException e) {
             throw new IllegalStateException("Outbox payload 역직렬화 실패", e);
         }

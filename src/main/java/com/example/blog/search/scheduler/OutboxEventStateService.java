@@ -1,6 +1,5 @@
 package com.example.blog.search.scheduler;
 
-import com.example.blog.search.monitoring.SearchSyncMetrics;
 import com.example.blog.search.outbox.entity.OutboxEvent;
 import com.example.blog.search.outbox.entity.OutboxEventStatus;
 import com.example.blog.search.outbox.repository.OutboxEventRepository;
@@ -16,7 +15,6 @@ import org.springframework.transaction.annotation.Transactional;
 public class OutboxEventStateService {
 
     private final OutboxEventRepository outboxEventRepository;
-    private final SearchSyncMetrics metrics;
 
     @Transactional(propagation = Propagation.REQUIRES_NEW)
     public boolean markProcessing(Long eventId) {
@@ -40,7 +38,7 @@ public class OutboxEventStateService {
     }
 
     @Transactional(propagation = Propagation.REQUIRES_NEW)
-    public void markFailureAndRequeue(Long eventId, String eventType, Exception e) {
+    public boolean markFailureAndRequeue(Long eventId, Exception e) {
         OutboxEvent event = outboxEventRepository.findById(eventId)
                 .orElseThrow(() -> new IllegalArgumentException("Outbox event not found. id=" + eventId));
 
@@ -53,13 +51,13 @@ public class OutboxEventStateService {
 
         if (event.canRetry()) {
             event.requeueIfRetryable();
-            metrics.incrementRetry(eventType);
-
             log.warn("Outbox 재시도 예정. eventId={}, retryCount={}, nextRetryAt={}",
                     event.getId(), event.getRetryCount(), event.getNextRetryAt());
+            return true;
         } else {
             log.error("Outbox 최종 실패. eventId={}, retryCount={}",
                     event.getId(), event.getRetryCount());
+            return false;
         }
     }
 

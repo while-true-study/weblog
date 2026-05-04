@@ -1,19 +1,16 @@
 package com.example.blog.search.scheduler;
 
-import com.example.blog.search.monitoring.SearchSyncMetrics;
-import com.example.blog.search.outbox.dto.PostOutboxPayload;
 import com.example.blog.search.outbox.entity.OutboxEvent;
 import com.example.blog.search.outbox.entity.OutboxEventStatus;
-import com.example.blog.search.outbox.entity.OutboxEventType;
+import com.example.blog.search.outbox.handler.OutboxEventHandler;
 import com.example.blog.search.outbox.repository.OutboxEventRepository;
-import com.example.blog.search.outbox.service.OutboxPayloadSerializer;
-import com.example.blog.search.service.PostSearchSyncService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
 import java.time.Duration;
 import java.time.LocalDateTime;
+import java.util.List;
 
 @Slf4j
 @Service
@@ -21,10 +18,8 @@ import java.time.LocalDateTime;
 public class OutboxEventOrchestrator {
 
     private final OutboxEventRepository outboxEventRepository;
-    private final OutboxPayloadSerializer serializer;
-    private final PostSearchSyncService postSearchSyncService;
+    private final List<OutboxEventHandler> handlers;
     private final OutboxEventStateService outboxEventStateService;
-    private final SearchSyncMetrics metrics;
 
     public void process(Long eventId) {
         OutboxEvent snapshot = outboxEventRepository.findById(eventId)
@@ -41,7 +36,7 @@ public class OutboxEventOrchestrator {
             return;
         }
 
-        String eventType = snapshot.getEventType().name().toLowerCase();
+        OutboxEventHandler handler = resolveHandler(snapshot);
 
         boolean locked = outboxEventStateService.markProcessing(eventId);
         if (!locked) {
@@ -53,21 +48,10 @@ public class OutboxEventOrchestrator {
             OutboxEvent processingEvent = outboxEventRepository.findById(eventId)
                     .orElseThrow(() -> new IllegalArgumentException("Outbox event not found after markProcessing. id=" + eventId));
 
-            PostOutboxPayload payload = serializer.deserialize(processingEvent.getPayload());
-
-            if (processingEvent.getEventType() == OutboxEventType.DELETED) {
-                postSearchSyncService.delete(payload.getPostId(), payload.getVersion());
-            } else {
-                postSearchSyncService.syncPostToSearch(payload.getPostId());
-            }
+            handler.handle(processingEvent);
 
             outboxEventStateService.markSuccess(eventId);
-
-            metrics.incrementSyncSuccess(eventType);
-            metrics.recordProcessingLatency(
-                    eventType,
-                    Duration.between(processingEvent.getCreatedAt(), LocalDateTime.now())
-            );
+            handler.onSuccess(processingEvent, Duration.between(processingEvent.getCreatedAt(), LocalDateTime.now()));
 
             log.info("Outbox 처리 성공. eventId={}, aggregateId={}, eventType={}",
                     processingEvent.getId(), processingEvent.getAggregateId(), processingEvent.getEventType());
@@ -75,8 +59,23 @@ public class OutboxEventOrchestrator {
         } catch (Exception e) {
             log.error("Outbox 처리 실패. eventId={}", eventId, e);
 
-            metrics.incrementSyncFailure(eventType);
-            outboxEventStateService.markFailureAndRequeue(eventId, eventType, e);
+            handler.onFailure(snapshot, e);
+            boolean requeued = outboxEventStateService.markFailureAndRequeue(eventId, e);
+            if (requeued) {
+                handler.onRetry(snapshot);
+            }
         }
+    }
+
+    private OutboxEventHandler resolveHandler(OutboxEvent event) {
+        return handlers.stream()
+                .filter(handler -> handler.supports(event))
+                .findFirst()
+                .orElseThrow(() -> new IllegalArgumentException(
+                        "No outbox handler for aggregateType=%s, eventType=%s".formatted(
+                                event.getAggregateType(),
+                                event.getEventType()
+                        )
+                ));
     }
 }
