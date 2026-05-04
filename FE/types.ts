@@ -66,6 +66,11 @@ export interface PostUpdateResponse {
   updatedAt: string;
 }
 
+export interface PostLikeToggleResponse {
+  liked: boolean;
+  likeCount: number;
+}
+
 export interface PageResponse<T> {
   content: T[];
   page: number;

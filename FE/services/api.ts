@@ -10,6 +10,7 @@ import {
   PostDetail,
   PostCreateRequest,
   PostCreateResponse,
+  PostLikeToggleResponse,
   PostUpdateRequest,
   PostUpdateResponse,
   Comment,
@@ -76,11 +77,8 @@ export const postApi = {
     return apiClient.delete<ApiResponse<null>>(`/posts/${id}`);
   },
 
-  // backend not implemented yet
   toggleLike: async (id: number) => {
-    return apiClient.post<ApiResponse<{ liked: boolean; likeCount: number }>>(
-      `/posts/${id}/like`,
-    );
+    return apiClient.post<ApiResponse<PostLikeToggleResponse>>(`/posts/${id}/like`);
   },
 
   // ===== 검색 API (경로 기반) =====

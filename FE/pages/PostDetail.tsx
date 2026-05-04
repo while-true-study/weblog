@@ -2,6 +2,7 @@ import React, { useEffect, useState } from "react";
 import { useParams, useNavigate, Link } from "react-router-dom";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
+import axios from "axios";
 
 import Layout from "../components/Layout";
 import { postApi } from "../services/api";
@@ -17,7 +18,9 @@ const PostDetail: React.FC = () => {
   const [comments, setComments] = useState<Comment[]>([]);
   const [loading, setLoading] = useState(true);
 
-  const [likes, setLikes] = useState(0);
+  const [likeCount, setLikeCount] = useState(0);
+  const [liked, setLiked] = useState<boolean | null>(null);
+  const [likeLoading, setLikeLoading] = useState(false);
   const [commentContent, setCommentContent] = useState("");
   const [commentsError, setCommentsError] = useState<string | null>(null);
 
@@ -43,7 +46,8 @@ const PostDetail: React.FC = () => {
       }
       const p = postRes.data.data;
       setPost(p);
-      setLikes(p.likeCount ?? 0);
+      setLikeCount(p.likeCount ?? 0);
+      setLiked(null);
       setComments([]);
     } catch (e) {
       console.error(e);
@@ -54,11 +58,30 @@ const PostDetail: React.FC = () => {
   };
 
   const handleToggleLike = async () => {
-    if (!post || !isAuthenticated) {
-      if (!isAuthenticated) alert("로그인이 필요합니다.");
+    if (!post || likeLoading) return;
+
+    if (!isAuthenticated) {
+      alert("로그인이 필요합니다.");
       return;
     }
-    alert("좋아요 기능은 아직 백엔드 미구현 상태입니다.");
+
+    setLikeLoading(true);
+
+    try {
+      const res = await postApi.toggleLike(post.id);
+      const toggleResult = res.data.data;
+
+      setLiked(toggleResult.liked);
+      setLikeCount(toggleResult.likeCount);
+    } catch (error) {
+      if (axios.isAxiosError(error) && error.response?.status === 401) {
+        alert("로그인이 필요한 기능입니다.");
+      } else {
+        alert("좋아요 처리에 실패했습니다.");
+      }
+    } finally {
+      setLikeLoading(false);
+    }
   };
 
   const handleSubmitComment = async (e: React.FormEvent) => {
@@ -141,9 +164,14 @@ const PostDetail: React.FC = () => {
           <div className="mt-8 flex items-center gap-3 md:hidden">
             <button
               onClick={handleToggleLike}
-              className="px-4 py-2 rounded-full border border-gray-200 hover:border-gray-400"
+              disabled={likeLoading}
+              className={`px-4 py-2 rounded-full border transition-colors disabled:opacity-60 disabled:cursor-not-allowed ${
+                liked
+                  ? "border-red-300 bg-red-50 text-red-600"
+                  : "border-gray-200 hover:border-gray-400"
+              }`}
             >
-              좋아요 {likes}
+              {likeLoading ? "처리 중..." : `좋아요 ${likeCount}`}
             </button>
           </div>
 
@@ -153,12 +181,17 @@ const PostDetail: React.FC = () => {
               <div className="sticky top-28 flex flex-col items-center gap-2">
                 <button
                   onClick={handleToggleLike}
-                  className="w-12 h-12 rounded-full border border-gray-200 flex items-center justify-center hover:border-gray-400"
+                  disabled={likeLoading}
+                  className={`w-12 h-12 rounded-full border flex items-center justify-center transition-colors disabled:opacity-60 disabled:cursor-not-allowed ${
+                    liked
+                      ? "border-red-300 bg-red-50 text-red-600"
+                      : "border-gray-200 hover:border-gray-400"
+                  }`}
                   aria-label="like"
                 >
-                  ❤
+                  {likeLoading ? "..." : "❤"}
                 </button>
-                <div className="text-sm font-bold text-gray-700">{likes}</div>
+                <div className="text-sm font-bold text-gray-700">{likeCount}</div>
               </div>
             </div>
 
