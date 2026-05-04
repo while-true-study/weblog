@@ -23,29 +23,27 @@ import java.util.Optional;
 @RequiredArgsConstructor
 public class PostSearchEsRepository implements PostSearchRepository {
 
-    private static final String INDEX_NAME = "post_search_v5";
-
     private final ElasticsearchClient elasticsearchClient;
 
     @Override
     public void upsertFullDocument(PostSearchDocument document) {
         try {
             IndexResponse response = elasticsearchClient.index(i -> i
-                    .index(INDEX_NAME)
+                    .index(PostSearchDocument.INDEX_NAME)
                     .id(String.valueOf(document.getPostId()))
                     .document(document)
             );
 
             log.info("ES 전체 문서 upsert 완료. index={}, postId={}, result={}",
-                    INDEX_NAME, document.getPostId(), response.result());
+                    PostSearchDocument.INDEX_NAME, document.getPostId(), response.result());
 
         } catch (ElasticsearchException e) {
             log.error("ES 전체 문서 upsert 실패(ElasticsearchException). index={}, postId={}, message={}",
-                    INDEX_NAME, document.getPostId(), e.getMessage(), e);
+                    PostSearchDocument.INDEX_NAME, document.getPostId(), e.getMessage(), e);
             throw new RuntimeException("ES 전체 문서 upsert 실패", e);
         } catch (IOException e) {
             log.error("ES 전체 문서 upsert 실패(IOException). index={}, postId={}",
-                    INDEX_NAME, document.getPostId(), e);
+                    PostSearchDocument.INDEX_NAME, document.getPostId(), e);
             throw new RuntimeException("ES 전체 문서 upsert 실패", e);
         }
     }
@@ -54,20 +52,20 @@ public class PostSearchEsRepository implements PostSearchRepository {
     public void deleteByPostId(Long postId) {
         try {
             DeleteResponse response = elasticsearchClient.delete(d -> d
-                    .index(INDEX_NAME)
+                    .index(PostSearchDocument.INDEX_NAME)
                     .id(String.valueOf(postId))
             );
 
             log.info("ES 문서 삭제 완료. index={}, postId={}, result={}",
-                    INDEX_NAME, postId, response.result());
+                    PostSearchDocument.INDEX_NAME, postId, response.result());
 
         } catch (ElasticsearchException e) {
             log.error("ES 문서 삭제 실패(ElasticsearchException). index={}, postId={}, message={}",
-                    INDEX_NAME, postId, e.getMessage(), e);
+                    PostSearchDocument.INDEX_NAME, postId, e.getMessage(), e);
             throw new RuntimeException("ES 문서 삭제 실패", e);
         } catch (IOException e) {
             log.error("ES 문서 삭제 실패(IOException). index={}, postId={}",
-                    INDEX_NAME, postId, e);
+                    PostSearchDocument.INDEX_NAME, postId, e);
             throw new RuntimeException("ES 문서 삭제 실패", e);
         }
     }
@@ -88,7 +86,7 @@ public class PostSearchEsRepository implements PostSearchRepository {
 
         try {
             SearchResponse<PostSearchDocument> response = elasticsearchClient.search(s -> s
-                            .index(INDEX_NAME)
+                            .index(PostSearchDocument.INDEX_NAME)
                             .from(safeOffset)
                             .size(fetchSize)
                             .query(q -> q.bool(b -> b
@@ -122,11 +120,11 @@ public class PostSearchEsRepository implements PostSearchRepository {
 
         } catch (ElasticsearchException e) {
             log.error("ES search failed. index={}, keyword={}, offset={}, limit={}, message={}",
-                    INDEX_NAME, keyword, safeOffset, safeLimit, e.getMessage(), e);
+                    PostSearchDocument.INDEX_NAME, keyword, safeOffset, safeLimit, e.getMessage(), e);
             throw new RuntimeException("ES 검색 실패(ElasticsearchException)", e);
         } catch (IOException e) {
             log.error("ES search IO failed. index={}, keyword={}, offset={}, limit={}",
-                    INDEX_NAME, keyword, safeOffset, safeLimit, e);
+                    PostSearchDocument.INDEX_NAME, keyword, safeOffset, safeLimit, e);
             throw new RuntimeException("ES 검색 실패(IOException)", e);
         }
     }
@@ -134,13 +132,13 @@ public class PostSearchEsRepository implements PostSearchRepository {
     @Override
     public long count() {
         try {
-            var response = elasticsearchClient.count(c -> c.index(INDEX_NAME));
+            var response = elasticsearchClient.count(c -> c.index(PostSearchDocument.INDEX_NAME));
             return response.count();
         } catch (ElasticsearchException e) {
-            log.warn("ES count 실패(ElasticsearchException). index={}, message={}", INDEX_NAME, e.getMessage());
+            log.warn("ES count 실패(ElasticsearchException). index={}, message={}", PostSearchDocument.INDEX_NAME, e.getMessage());
             return -1;
         } catch (IOException e) {
-            log.warn("ES count 실패(IOException). index={}", INDEX_NAME, e);
+            log.warn("ES count 실패(IOException). index={}", PostSearchDocument.INDEX_NAME, e);
             return -1;
         }
     }
@@ -149,7 +147,7 @@ public class PostSearchEsRepository implements PostSearchRepository {
     public Optional<PostSearchDocument> findByPostId(Long postId) {
         try {
             var response = elasticsearchClient.get(g -> g
-                            .index(INDEX_NAME)
+                            .index(PostSearchDocument.INDEX_NAME)
                             .id(String.valueOf(postId)),
                     PostSearchDocument.class
             );
@@ -162,11 +160,11 @@ public class PostSearchEsRepository implements PostSearchRepository {
 
         } catch (ElasticsearchException e) {
             log.error("ES 문서 조회 실패(ElasticsearchException). index={}, postId={}, message={}",
-                    INDEX_NAME, postId, e.getMessage(), e);
+                    PostSearchDocument.INDEX_NAME, postId, e.getMessage(), e);
             throw new RuntimeException("ES 문서 조회 실패", e);
         } catch (IOException e) {
             log.error("ES 문서 조회 실패(IOException). index={}, postId={}",
-                    INDEX_NAME, postId, e);
+                    PostSearchDocument.INDEX_NAME, postId, e);
             throw new RuntimeException("ES 문서 조회 실패", e);
         }
     }

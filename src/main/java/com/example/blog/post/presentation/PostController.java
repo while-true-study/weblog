@@ -11,6 +11,7 @@ import com.example.blog.post.presentation.dto.response.PostUpdateResponse;
 import com.example.blog.post.presentation.dto.response.SliceResponse;
 import com.example.blog.post.service.PostService;
 import com.example.blog.post.service.PostViewerIdResolver;
+import com.example.blog.user.entity.CustomUserPrincipal;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
@@ -20,7 +21,6 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Slice;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
-import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
@@ -61,9 +61,9 @@ public class PostController {
     @PostMapping
     public ApiResponse<PostCreateResponse> createPost(
             @RequestBody PostPublishedDto req,
-            @AuthenticationPrincipal UserDetails userDetails
+            @AuthenticationPrincipal CustomUserPrincipal principal
     ) {
-        PostCreateResponse postCreateResponse = postService.createPost(req, userDetails.getUsername());
+        PostCreateResponse postCreateResponse = postService.createPost(req, principal.getEmail());
         return ApiResponse.success(postCreateResponse);
     }
 
@@ -73,10 +73,10 @@ public class PostController {
     public ApiResponse<PostUpdateResponse> updatePost(
             @Parameter(description = "게시글 ID") @PathVariable Long postId,
             @RequestBody PostUpdateRequest req,
-            @AuthenticationPrincipal UserDetails userDetails
+            @AuthenticationPrincipal CustomUserPrincipal principal
     ) {
         return ApiResponse.success(
-                postService.updatePost(postId, req, userDetails.getUsername())
+                postService.updatePost(postId, req, principal.getEmail())
         );
     }
 
@@ -85,9 +85,9 @@ public class PostController {
     @DeleteMapping("/{postId}")
     public ApiResponse<Void> deletePost(
             @Parameter(description = "게시글 ID") @PathVariable Long postId,
-            @AuthenticationPrincipal UserDetails userDetails
+            @AuthenticationPrincipal CustomUserPrincipal principal
     ) {
-        postService.deletePost(postId, userDetails.getUsername());
+        postService.deletePost(postId, principal.getEmail());
         return ApiResponse.success(null);
     }
 }

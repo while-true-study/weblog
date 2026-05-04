@@ -76,14 +76,23 @@ public class PostServiceImpl implements PostService {
                 throw new BlogException(ErrorCode.POST_NOT_FOUND);
             }
 
-            boolean shouldIncrease = redisPostViewDedupService.shouldIncrease(id, viewerId);
+            boolean shouldIncrease = false;
+            try {
+                shouldIncrease = redisPostViewDedupService.shouldIncrease(id, viewerId);
+            } catch (RuntimeException e) {
+                log.warn("Skipping view count update because Redis dedup failed. postId={}, viewerId={}", id, viewerId, e);
+            }
 
             if (shouldIncrease) {
                 post.increaseViewCount();
                 post.increaseSyncVersion();
                 postOutboxService.createUpdatedEvent(post);
-                redisPostRankingCache.increaseViewScore(id);
-                popularEventService.reflectView(id);
+                try {
+                    redisPostRankingCache.increaseViewScore(id);
+                    popularEventService.reflectView(id);
+                } catch (RuntimeException e) {
+                    log.warn("Skipping ranking/popular score update because Redis side effect failed. postId={}, viewerId={}", id, viewerId, e);
+                }
             }
 
             return PostDetailDto.from(post, post.getViewCount());

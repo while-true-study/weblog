@@ -30,11 +30,16 @@ public class PostSearchSyncServiceImpl implements PostSearchSyncService {
         Post post = postRepository.findById(postId)
                 .orElseThrow(() -> new BlogException(ErrorCode.POST_NOT_FOUND));
 
+        // Search exposure policy:
+        // - DRAFT is not exposed by either MySQL or ES search endpoints.
+        // - DELETED is removed from ES by delete events. If a delete event fails, stale docs can remain
+        //   until retry/repair processing catches up.
         if (post.getPostStatus() == PostStatus.DELETED) {
             postSearchRepository.deleteByPostId(postId);
             return;
         }
 
+        // Official document mapping path for search sync.
         PostSearchDocument document = PostSearchDocument.from(post);
         postSearchRepository.upsertFullDocument(document);
 

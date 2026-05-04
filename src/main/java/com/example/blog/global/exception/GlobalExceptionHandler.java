@@ -12,6 +12,7 @@ import org.springframework.web.bind.MissingServletRequestParameterException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
+import org.springframework.web.server.ResponseStatusException;
 
 import java.util.stream.Collectors;
 
@@ -120,6 +121,16 @@ public class GlobalExceptionHandler {
                 .body(ApiResponse.fail(ErrorCode.FORBIDDEN));
     }
 
+    @ExceptionHandler(ResponseStatusException.class)
+    public ResponseEntity<ApiResponse<Void>> handleResponseStatusException(ResponseStatusException e) {
+        int status = e.getStatusCode().value();
+        String message = e.getReason() != null ? e.getReason() : defaultMessage(status);
+        log.warn("[ResponseStatusException] status={} message={}", status, message);
+        return ResponseEntity
+                .status(status)
+                .body(ApiResponse.fail(resolveErrorCode(status), message));
+    }
+
     /**
      * 예상치 못한 예외 — 500
      * 로그에는 전체 스택 트레이스를 남기고, 응답에는 노출하지 않음.
@@ -130,5 +141,23 @@ public class GlobalExceptionHandler {
         return ResponseEntity
                 .status(500)
                 .body(ApiResponse.fail(ErrorCode.INTERNAL_ERROR));
+    }
+
+    private String resolveErrorCode(int status) {
+        return switch (status) {
+            case 400 -> ErrorCode.INVALID_INPUT.code();
+            case 401 -> ErrorCode.UNAUTHORIZED.code();
+            case 403 -> ErrorCode.FORBIDDEN.code();
+            default -> ErrorCode.INTERNAL_ERROR.code();
+        };
+    }
+
+    private String defaultMessage(int status) {
+        return switch (status) {
+            case 400 -> ErrorCode.INVALID_INPUT.message();
+            case 401 -> ErrorCode.UNAUTHORIZED.message();
+            case 403 -> ErrorCode.FORBIDDEN.message();
+            default -> ErrorCode.INTERNAL_ERROR.message();
+        };
     }
 }

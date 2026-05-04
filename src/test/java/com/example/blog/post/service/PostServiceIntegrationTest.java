@@ -5,75 +5,48 @@ import com.example.blog.post.entity.PostStatus;
 import com.example.blog.post.presentation.dto.request.PostPublishedDto;
 import com.example.blog.post.presentation.dto.request.PostUpdateRequest;
 import com.example.blog.post.presentation.dto.response.PostCreateResponse;
-import com.example.blog.post.repository.PostRepository;
 import com.example.blog.search.outbox.entity.OutboxEvent;
 import com.example.blog.search.outbox.entity.OutboxEventType;
-import com.example.blog.search.outbox.repository.OutboxEventRepository;
+import com.example.blog.support.IntegrationTestSupport;
 import com.example.blog.user.entity.User;
 import com.example.blog.user.entity.UserRole;
-import com.example.blog.user.repository.UserRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.boot.testcontainers.service.connection.ServiceConnection;
-import org.testcontainers.junit.jupiter.Container;
-import org.testcontainers.junit.jupiter.Testcontainers;
-import org.testcontainers.mysql.MySQLContainer;
 
 import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-
-@SpringBootTest
-@Testcontainers
-class PostServiceIntegrationTest {
-
-    @Container
-    @ServiceConnection
-    static MySQLContainer mysql = new MySQLContainer("mysql:8.0.36");
+class PostServiceIntegrationTest extends IntegrationTestSupport {
 
     @Autowired
     private PostService postService;
 
-    @Autowired
-    private PostRepository postRepository;
-
-    @Autowired
-    private UserRepository userRepository;
-
-    @Autowired
-    private OutboxEventRepository outboxEventRepository;
-
     private User author;
 
     @BeforeEach
-    void setUp() {
-        outboxEventRepository.deleteAll();
-        postRepository.deleteAll();
-        userRepository.deleteAll();
-
+    void setUpAuthor() {
         User user = new User();
         user.setEmail("test@example.com");
         user.setNickname("tester");
         user.setUsername("tester");
         user.setPassword("encoded-password");
-        user.setRole(UserRole.USER); // 네 enum 이름에 맞게 수정
+        user.setRole(UserRole.USER);
 
         author = userRepository.save(user);
     }
 
     @Test
-    @DisplayName("게시글 생성 시 Post 저장과 CREATED outbox 이벤트 생성")
-    void createPost_createsPostAndOutbox() {
+    @DisplayName("status=PUBLISHED로 게시글 생성 시 PUBLISHED 상태로 저장되고 CREATED outbox 이벤트가 생성된다")
+    void createPost_withPublishedStatus_savesPublishedPostAndCreatesOutbox() {
         PostPublishedDto request = new PostPublishedDto(
                 "제목",
                 "본문",
                 null,
                 List.of("java", "spring"),
-                PostStatus.DRAFT.name()
+                PostStatus.PUBLISHED.name()
         );
 
         PostCreateResponse response = postService.createPost(request, author.getEmail());
@@ -87,6 +60,73 @@ class PostServiceIntegrationTest {
         List<OutboxEvent> events = outboxEventRepository.findAll();
         assertThat(events).hasSize(1);
         assertThat(events.get(0).getAggregateId()).isEqualTo(savedPost.getPostId());
+        assertThat(events.get(0).getEventType()).isEqualTo(OutboxEventType.CREATED);
+    }
+
+    @Test
+    @DisplayName("status=DRAFT로 게시글 생성 시 DRAFT 상태로 저장되고 CREATED outbox 이벤트가 생성된다")
+    void createPost_withDraftStatus_savesDraftPostAndCreatesOutbox() {
+        PostPublishedDto request = new PostPublishedDto(
+                "제목",
+                "본문",
+                null,
+                List.of("java", "spring"),
+                PostStatus.DRAFT.name()
+        );
+
+        PostCreateResponse response = postService.createPost(request, author.getEmail());
+
+        Post savedPost = postRepository.findById(response.id()).orElseThrow();
+        assertThat(savedPost.getTitle()).isEqualTo("제목");
+        assertThat(savedPost.getContent()).isEqualTo("본문");
+        assertThat(savedPost.getPostStatus()).isEqualTo(PostStatus.DRAFT);
+        assertThat(savedPost.getSyncVersion()).isNotNull();
+
+        List<OutboxEvent> events = outboxEventRepository.findAll();
+        assertThat(events).hasSize(1);
+        assertThat(events.get(0).getAggregateId()).isEqualTo(savedPost.getPostId());
+        assertThat(events.get(0).getEventType()).isEqualTo(OutboxEventType.CREATED);
+    }
+
+    @Test
+    @DisplayName("status가 누락되면 게시글은 기본값 PUBLISHED로 저장되고 CREATED outbox 이벤트가 생성된다")
+    void createPost_withoutStatus_defaultsToPublished() {
+        PostPublishedDto request = new PostPublishedDto(
+                "기본 공개 제목",
+                "기본 공개 본문",
+                null,
+                List.of("default"),
+                null
+        );
+
+        PostCreateResponse response = postService.createPost(request, author.getEmail());
+
+        Post savedPost = postRepository.findById(response.id()).orElseThrow();
+        assertThat(savedPost.getPostStatus()).isEqualTo(PostStatus.PUBLISHED);
+
+        List<OutboxEvent> events = outboxEventRepository.findAll();
+        assertThat(events).hasSize(1);
+        assertThat(events.get(0).getEventType()).isEqualTo(OutboxEventType.CREATED);
+    }
+
+    @Test
+    @DisplayName("status가 공백이면 게시글은 기본값 PUBLISHED로 저장되고 CREATED outbox 이벤트가 생성된다")
+    void createPost_withBlankStatus_defaultsToPublished() {
+        PostPublishedDto request = new PostPublishedDto(
+                "공백 상태 제목",
+                "공백 상태 본문",
+                null,
+                List.of("blank"),
+                "   "
+        );
+
+        PostCreateResponse response = postService.createPost(request, author.getEmail());
+
+        Post savedPost = postRepository.findById(response.id()).orElseThrow();
+        assertThat(savedPost.getPostStatus()).isEqualTo(PostStatus.PUBLISHED);
+
+        List<OutboxEvent> events = outboxEventRepository.findAll();
+        assertThat(events).hasSize(1);
         assertThat(events.get(0).getEventType()).isEqualTo(OutboxEventType.CREATED);
     }
 

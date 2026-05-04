@@ -10,6 +10,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UserDetails;
+import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.web.filter.OncePerRequestFilter;
 
 import java.io.IOException;
@@ -53,6 +54,10 @@ public class JWTFilter extends OncePerRequestFilter {
 
                 SecurityContextHolder.getContext().setAuthentication(auth);
 
+            } catch (UsernameNotFoundException e) {
+                SecurityContextHolder.clearContext();
+                unauthorized(response, "INVALID_TOKEN", "User not found");
+                return;
             } catch (io.jsonwebtoken.JwtException e) {
                 SecurityContextHolder.clearContext();
                 unauthorized(response, "INVALID_TOKEN", "Invalid token");

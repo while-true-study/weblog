@@ -541,6 +541,11 @@ elasticsearchClient.search(s -> s
 , PostSearchDocument.class);
 ```
 
+검색 노출 정책:
+- MySQL 검색은 `PUBLISHED` 이고 `deleted_at is null` 인 게시글만 노출합니다.
+- Elasticsearch 검색도 `PUBLISHED` 문서만 필터링합니다.
+- `DELETED` 게시글은 삭제 이벤트가 성공하면 ES 문서가 제거됩니다. 삭제 이벤트가 실패하면 stale 문서가 잠시 남을 수 있으며, 현재 구조에서는 retry/repair 경로로 최종 정합성을 맞춥니다.
+
 #### 버전 기반 동기화 (syncVersion)
 
 Post 엔티티와 ES 문서 모두 `version` 필드를 가지며, Repair Batch가 이를 비교해 불일치 시 재동기화합니다.
@@ -699,11 +704,27 @@ post.create
 ```yaml
 # application.yml
 management:
+  server:
+    port: 8081
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics,threaddump,prometheus
+  endpoint:
+    health:
+      show-details: always
   metrics:
     distribution:
       percentiles-histogram:
         blog.search.outbox.processing.latency: true
 ```
+
+**개발 환경 노출 정책**:
+
+- management port는 `8081` 로 앱 포트와 분리
+- actuator는 비즈니스 API와 분리된 management 포트에서만 확인
+- 현재 통합 테스트 기준 management 포트의 actuator endpoint는 익명 요청에 `401` 을 반환할 수 있으므로, 내부망 접근 또는 인증된 요청 기준으로 확인
+- Prometheus scrape 대상은 `prometheus/prometheus.yml` 기준으로 `host.docker.internal:8081/actuator/prometheus`
 
 **주요 메트릭**:
 
@@ -711,8 +732,42 @@ management:
 |---|---|
 | `http_server_requests_seconds_*` | HTTP 요청 지연 (p50, p95, p99) |
 | `blog.search.outbox.processing.latency` | Outbox 처리 지연 히스토그램 |
+| `blog_search_outbox_pending_count` | 현재 PENDING Outbox 이벤트 수 |
+| `blog_search_outbox_failed_count` | 현재 FAILED Outbox 이벤트 수 |
+| `blog_search_es_sync_total` | ES 동기화 성공/실패 카운터 |
+| `blog_search_outbox_retry_total` | Outbox 재시도 카운터 |
 | `jvm_memory_used_bytes` | JVM 힙/메타스페이스 사용량 |
 | `hikaricp_connections_*` | DB 커넥션 풀 상태 |
+
+**수동 확인 방법**:
+
+```bash
+# 익명 접근 시 401이 나올 수 있음
+curl http://localhost:8081/actuator/health
+
+# 인증된 요청 예시
+curl -H "Authorization: Bearer <ACCESS_TOKEN>" http://localhost:8081/actuator/prometheus
+```
+
+- Prometheus target 확인: `http://localhost:9090/targets`
+- Grafana datasource 확인: `http://localhost:3001`
+
+**traceId/spanId 로그 확인**:
+
+- 로그 패턴에 `traceId` / `spanId`를 포함
+- `TraceHelper`로 감싼 구간은 Jaeger trace와 로그를 함께 상관관계 확인 가능
+
+```text
+2026-05-04 20:10:15.321 INFO  [http-nio-8080-exec-1] [traceId=8f1d... spanId=2ab3...] c.e.b.post.service.PostServiceImpl - ...
+```
+
+**운영 환경 권장 정책**:
+
+- `management.server.port`는 내부망 또는 프라이빗 서브넷으로 제한
+- `/actuator/prometheus` 외부 공개 금지
+- `management.endpoint.health.show-details=always` 는 개발 전용
+- 운영에서는 `when_authorized` 또는 `never` 권장
+- Grafana/Prometheus는 내부 관측망에서만 접근 권장
 
 **Prometheus**: `http://localhost:9090`
 **Grafana**: `http://localhost:3001`
@@ -824,6 +879,8 @@ npm run dev       # http://localhost:3000
 | Frontend | http://localhost:3000 |
 | Backend API | http://localhost:8080/api/v1 |
 | Swagger UI | http://localhost:8080/api/v1/swagger-ui/index.html |
+| Actuator Health | http://localhost:8081/actuator/health |
+| Actuator Prometheus | http://localhost:8081/actuator/prometheus |
 | Jaeger UI | http://localhost:16686 |
 | Prometheus | http://localhost:9090 |
 | Grafana | http://localhost:3001 |

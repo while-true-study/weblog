@@ -5,7 +5,6 @@ import com.example.blog.post.entity.PostStatus;
 import com.example.blog.post.repository.PostRepository;
 import com.example.blog.search.batch.dto.RepairResult;
 import com.example.blog.search.infra.es.document.PostSearchDocument;
-import com.example.blog.search.mapper.PostSearchPayloadMapper;
 import com.example.blog.search.repository.PostSearchRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -21,7 +20,6 @@ public class SearchIndexRepairService {
 
     private final PostRepository postRepository;
     private final PostSearchRepository postSearchRepository;
-    private final PostSearchPayloadMapper mapper;
     private final PostSearchSyncService postSearchSyncService;
 
     /**

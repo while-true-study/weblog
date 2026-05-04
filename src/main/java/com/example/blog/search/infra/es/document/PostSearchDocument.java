@@ -14,9 +14,11 @@ import java.time.LocalDateTime;
 @Getter
 @Setter
 @NoArgsConstructor
-@Document(indexName = "post_search_v4")
+@Document(indexName = PostSearchDocument.INDEX_NAME)
 @JsonIgnoreProperties(ignoreUnknown = true)
 public class PostSearchDocument {
+
+    public static final String INDEX_NAME = "post_search_v5";
 
     @Id
     @JsonProperty("postid")

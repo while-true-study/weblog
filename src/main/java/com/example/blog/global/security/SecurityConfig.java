@@ -1,7 +1,11 @@
 package com.example.blog.global.security;
 
+import com.example.blog.global.common.ApiResponse;
+import com.example.blog.global.exception.ErrorCode;
 import com.example.blog.global.security.jwt.JWTFilter;
 import com.example.blog.global.security.jwt.JWTUtil;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import jakarta.servlet.http.HttpServletResponse;
 import com.example.blog.user.service.CustomUserDetailsService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
@@ -12,7 +16,10 @@ import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
+import org.springframework.http.HttpMethod;
+import org.springframework.security.web.AuthenticationEntryPoint;
 import org.springframework.security.web.SecurityFilterChain;
+import org.springframework.security.web.access.AccessDeniedHandler;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
@@ -27,6 +34,7 @@ public class SecurityConfig {
     private final AuthenticationConfiguration authenticationConfiguration;
     private final JWTUtil jwtUtil;
     private final CustomUserDetailsService customUserDetailsService;
+    private final ObjectMapper objectMapper;
 
     @Bean
     public AuthenticationManager authenticationManager() throws Exception {
@@ -36,6 +44,18 @@ public class SecurityConfig {
     @Bean
     public BCryptPasswordEncoder passwordEncoder() {
         return new BCryptPasswordEncoder();
+    }
+
+    @Bean
+    public AuthenticationEntryPoint authenticationEntryPoint() {
+        return (request, response, authException) ->
+                writeError(response, HttpServletResponse.SC_UNAUTHORIZED, ErrorCode.UNAUTHORIZED);
+    }
+
+    @Bean
+    public AccessDeniedHandler accessDeniedHandler() {
+        return (request, response, accessDeniedException) ->
+                writeError(response, HttpServletResponse.SC_FORBIDDEN, ErrorCode.FORBIDDEN);
     }
 
     @Bean
@@ -63,6 +83,10 @@ public class SecurityConfig {
                 .csrf(csrf -> csrf.disable())
                 .formLogin(form -> form.disable())
                 .httpBasic(httpBasic -> httpBasic.disable())
+                .exceptionHandling(exception -> exception
+                        .authenticationEntryPoint(authenticationEntryPoint())
+                        .accessDeniedHandler(accessDeniedHandler())
+                )
 
                 .sessionManagement(session ->
                         session.sessionCreationPolicy(SessionCreationPolicy.STATELESS)
@@ -70,17 +94,59 @@ public class SecurityConfig {
 
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers(
+                                "/actuator/**",
+                                "/health",
+                                "/prometheus",
+                                "/auth/signup",
+                                "/auth/login",
+                                "/auth/refresh",
                                 "/swagger-ui/**",
                                 "/swagger-ui.html",
-                                "/api/v1/v3/api-docs/**",
-                                "/api/v1/swagger-ui/**"
+                                "/v3/api-docs/**",
+                                "/actuator/health",
+                                "/actuator/prometheus"
                         ).permitAll()
-                        .anyRequest().permitAll()
+                        .requestMatchers(
+                                HttpMethod.GET,
+                                "/posts",
+                                "/posts/*",
+                                "/search/**"
+                        ).permitAll()
+                        .requestMatchers(
+                                "/auth/me",
+                                "/series"
+                        ).authenticated()
+                        .requestMatchers(
+                                HttpMethod.POST,
+                                "/posts"
+                        ).authenticated()
+                        .requestMatchers(
+                                HttpMethod.PATCH,
+                                "/posts/*",
+                                "/posts/*/comments",
+                                "/comments/**"
+                        ).authenticated()
+                        .requestMatchers(
+                                HttpMethod.DELETE,
+                                "/posts/*",
+                                "/comments/**"
+                        ).authenticated()
+                        .requestMatchers(
+                                HttpMethod.POST,
+                                "/posts/*/comments",
+                                "/posts/*/like"
+                        ).authenticated()
+                        .anyRequest().authenticated()
                 )
 
-                // JWT 인증 필터만 유지
                 .addFilterBefore(jwtFilter, UsernamePasswordAuthenticationFilter.class);
 
         return http.build();
+    }
+
+    private void writeError(HttpServletResponse response, int status, ErrorCode errorCode) throws java.io.IOException {
+        response.setStatus(status);
+        response.setContentType("application/json;charset=UTF-8");
+        objectMapper.writeValue(response.getWriter(), ApiResponse.fail(errorCode));
     }
 }
