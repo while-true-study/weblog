@@ -9,7 +9,9 @@ import {
   PostSummary,
   PostDetail,
   PostCreateRequest,
+  PostCreateResponse,
   PostUpdateRequest,
+  PostUpdateResponse,
   Comment,
   Category,
 } from "../types";
@@ -43,21 +45,13 @@ export const postApi = {
     page?: number;
     size?: number;
     sort?: string; // "createdAt,DESC"
-    categoryId?: number;
     keyword?: string;
     tag?: string;
   }) => {
-    const {
-      page = 0,
-      size = 10,
-      sort = "createdAt,DESC",
-      categoryId,
-      keyword,
-      tag,
-    } = opts ?? {};
+    const { page = 0, size = 10, sort = "createdAt,DESC", keyword, tag } =
+      opts ?? {};
 
     const params: any = { page, size, sort };
-    if (categoryId !== undefined) params.categoryId = categoryId;
     if (keyword) params.keyword = keyword;
     if (tag) params.tag = tag;
 
@@ -71,17 +65,18 @@ export const postApi = {
   },
 
   create: async (data: PostCreateRequest) => {
-    return apiClient.post<ApiResponse<PostDetail>>("/posts", data);
+    return apiClient.post<ApiResponse<PostCreateResponse>>("/posts", data);
   },
 
   update: async (id: number, data: PostUpdateRequest) => {
-    return apiClient.patch<ApiResponse<null>>(`/posts/${id}`, data);
+    return apiClient.patch<ApiResponse<PostUpdateResponse>>(`/posts/${id}`, data);
   },
 
   delete: async (id: number) => {
     return apiClient.delete<ApiResponse<null>>(`/posts/${id}`);
   },
 
+  // backend not implemented yet
   toggleLike: async (id: number) => {
     return apiClient.post<ApiResponse<{ liked: boolean; likeCount: number }>>(
       `/posts/${id}/like`,
@@ -116,14 +111,17 @@ export const postApi = {
 };
 // Comment Services
 export const commentApi = {
+  // backend not implemented yet
   getList: async (postId: number) => {
     return apiClient.get<ApiResponse<Comment[]>>(`/posts/${postId}/comments`);
   },
+  // backend not implemented yet
   create: async (postId: number, content: string) => {
     return apiClient.post<ApiResponse<null>>(`/posts/${postId}/comments`, {
       content,
     });
   },
+  // backend not implemented yet
   delete: async (commentId: number) => {
     return apiClient.delete<ApiResponse<null>>(`/comments/${commentId}`);
   },
@@ -131,6 +129,7 @@ export const commentApi = {
 
 // Category Services
 export const categoryApi = {
+  // backend not implemented yet
   getList: async () => {
     return apiClient.get<ApiResponse<Category[]>>("/categories");
   },

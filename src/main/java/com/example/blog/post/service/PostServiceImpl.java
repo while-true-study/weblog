@@ -1,12 +1,18 @@
 package com.example.blog.post.service;
 
+import com.example.blog.global.exception.BlogException;
+import com.example.blog.global.exception.ErrorCode;
 import com.example.blog.global.observability.TraceHelper;
 import com.example.blog.popular.service.PopularEventService;
 import com.example.blog.post.entity.Post;
 import com.example.blog.post.entity.PostStatus;
 import com.example.blog.post.presentation.dto.request.PostPublishedDto;
 import com.example.blog.post.presentation.dto.request.PostUpdateRequest;
-import com.example.blog.post.presentation.dto.response.*;
+import com.example.blog.post.presentation.dto.response.PostCreateResponse;
+import com.example.blog.post.presentation.dto.response.PostDetailDto;
+import com.example.blog.post.presentation.dto.response.PostListItemDto;
+import com.example.blog.post.presentation.dto.response.PostSearchCond;
+import com.example.blog.post.presentation.dto.response.PostUpdateResponse;
 import com.example.blog.post.repository.PostRepository;
 import com.example.blog.post.repository.spec.PostSpecs;
 import com.example.blog.search.outbox.service.PostOutboxService;
@@ -16,9 +22,9 @@ import com.example.blog.tag.entity.Tag;
 import com.example.blog.tag.repository.TagRepository;
 import com.example.blog.user.entity.User;
 import com.example.blog.user.repository.UserRepository;
-import com.example.blog.global.exception.BlogException;
-import com.example.blog.global.exception.ErrorCode;
 import io.micrometer.observation.ObservationRegistry;
+import java.time.LocalDateTime;
+import java.util.List;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Pageable;
@@ -26,8 +32,6 @@ import org.springframework.data.domain.Slice;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-
-import java.time.LocalDateTime;
 
 @Slf4j
 @Service
@@ -45,15 +49,13 @@ public class PostServiceImpl implements PostService {
     private final ObservationRegistry observationRegistry;
     private final TraceHelper traceHelper;
 
-    //    private final DbShardViewCounter viewCountService; // 샤딩 버전
-    //    private final ApplicationEventPublisher eventPublisher; // event 퍼블리셔
-
     @Transactional(readOnly = true)
     @Override
     public Slice<PostListItemDto> getPosts(PostSearchCond cond, Pageable pageable) {
         return traceHelper.trace("post.list.read", () -> {
             Specification<Post> spec =
-                    PostSpecs.hasTag(cond.tag())
+                    PostSpecs.keyword(cond.keyword())
+                            .and(PostSpecs.hasTag(cond.tag()))
                             .and(PostSpecs.status(PostStatus.PUBLISHED));
 
             return postRepository.findBy(spec, query ->
@@ -101,7 +103,7 @@ public class PostServiceImpl implements PostService {
             post.setTitle(postPublishedDto.title());
             post.setAuthor(author);
             post.setContent(postPublishedDto.content());
-            post.setPostStatus(PostStatus.PUBLISHED);
+            post.setPostStatus(resolveStatus(postPublishedDto.status()));
             post.setViewCount(0L);
             post.setLikeCount(0L);
             post.setCreatedAt(LocalDateTime.now());
@@ -155,8 +157,23 @@ public class PostServiceImpl implements PostService {
             }
 
             traceHelper.trace("post.update.apply-changes", () -> {
-                post.setTitle(req.getTitle());
-                post.setContent(req.getContent());
+                if (req.getTitle() != null) {
+                    post.setTitle(req.getTitle());
+                }
+                if (req.getContent() != null) {
+                    post.setContent(req.getContent());
+                }
+                if (req.getStatus() != null) {
+                    post.setPostStatus(resolveStatus(req.getStatus()));
+                }
+                if (req.getSeriesId() != null) {
+                    Series series = seriesRepository.findByIdAndOwner_UserId(req.getSeriesId(), post.getAuthor().getUserId())
+                            .orElseThrow(() -> new BlogException(ErrorCode.SERIES_NOT_FOUND));
+                    post.setSeries(series);
+                }
+                if (req.getTags() != null) {
+                    replaceTags(post, req.getTags());
+                }
                 post.setUpdatedAt(LocalDateTime.now());
                 post.increaseSyncVersion();
             });
@@ -202,5 +219,26 @@ public class PostServiceImpl implements PostService {
         if (author == null || author.getEmail() == null || !author.getEmail().equals(email)) {
             throw new BlogException(ErrorCode.POST_FORBIDDEN);
         }
+    }
+
+    private void replaceTags(Post post, List<String> tagNames) {
+        post.clearTags();
+
+        tagNames.stream()
+                .filter(tagName -> tagName != null && !tagName.isBlank())
+                .map(String::trim)
+                .distinct()
+                .forEach(tagName -> {
+                    Tag tag = tagRepository.findByTagName(tagName)
+                            .orElseGet(() -> tagRepository.save(Tag.of(tagName)));
+                    post.addTag(tag);
+                });
+    }
+
+    private PostStatus resolveStatus(String status) {
+        if (status == null || status.isBlank()) {
+            return PostStatus.PUBLISHED;
+        }
+        return PostStatus.valueOf(status.trim().toUpperCase());
     }
 }

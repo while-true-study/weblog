@@ -1,40 +1,23 @@
 import React, { useEffect, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
-import { categoryApi, postApi } from "../services/api";
-import { Category } from "../types";
+import { postApi } from "../services/api";
 
 const Write: React.FC = () => {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const editId = searchParams.get("edit");
 
-  const [categories, setCategories] = useState<Category[]>([]);
   const [loading, setLoading] = useState(false);
 
   // Form State
   const [title, setTitle] = useState("");
   const [content, setContent] = useState("");
-  const [categoryCode, setCategoryCode] = useState("");
   const [tags, setTags] = useState<string[]>([]);
   const [currentTag, setCurrentTag] = useState("");
 
   useEffect(() => {
-    fetchCategories();
     if (editId) loadPostForEdit(Number(editId));
   }, [editId]);
-
-  const fetchCategories = async () => {
-    try {
-      const res = await categoryApi.getList();
-      if (res.data.success) {
-        setCategories(res.data.data);
-        if (!editId && res.data.data.length > 0)
-          setCategoryCode(res.data.data[0].code);
-      }
-    } catch (err) {
-      console.error(err);
-    }
-  };
 
   const loadPostForEdit = async (id: number) => {
     try {
@@ -43,8 +26,7 @@ const Write: React.FC = () => {
         const post = res.data.data;
         setTitle(post.title);
         setContent(post.content);
-        setCategoryCode(post.category);
-        setTags(post.tags);
+        setTags(post.tags ?? []);
       }
     } catch (err) {
       navigate("/");
@@ -72,7 +54,6 @@ const Write: React.FC = () => {
       const payload = {
         title,
         content,
-        category: categoryCode,
         tags,
         status: "PUBLISHED" as const,
       };

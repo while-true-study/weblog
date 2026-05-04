@@ -4,7 +4,7 @@ import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 
 import Layout from "../components/Layout";
-import { postApi, commentApi } from "../services/api";
+import { postApi } from "../services/api";
 import { PostDetail as PostDetailType, Comment } from "../types";
 import { useAuthStore } from "../store/useAuthStore";
 
@@ -33,10 +33,9 @@ const PostDetail: React.FC = () => {
 
   const load = async (postId: number) => {
     setLoading(true);
-    setCommentsError(null);
+    setCommentsError("댓글 기능은 아직 백엔드 미구현 상태입니다.");
 
     try {
-      // 1) 게시글 먼저
       const postRes = await postApi.getDetail(postId);
       if (!postRes.data?.success) {
         navigate("/");
@@ -45,16 +44,7 @@ const PostDetail: React.FC = () => {
       const p = postRes.data.data;
       setPost(p);
       setLikes(p.likeCount ?? 0);
-
-      // 2) 댓글은 실패해도 페이지 유지
-      try {
-        const commentRes = await commentApi.getList(postId);
-        if (commentRes.data?.success) setComments(commentRes.data.data ?? []);
-        else setComments([]);
-      } catch {
-        setComments([]);
-        setCommentsError("댓글을 불러오지 못했습니다.");
-      }
+      setComments([]);
     } catch (e) {
       console.error(e);
       navigate("/");
@@ -68,27 +58,14 @@ const PostDetail: React.FC = () => {
       if (!isAuthenticated) alert("로그인이 필요합니다.");
       return;
     }
-    try {
-      const res = await postApi.toggleLike(post.id);
-      if (res.data?.success) setLikes(res.data.data.likeCount ?? likes);
-    } catch (e) {
-      console.error(e);
-    }
+    alert("좋아요 기능은 아직 백엔드 미구현 상태입니다.");
   };
 
   const handleSubmitComment = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!post || !commentContent.trim()) return;
 
-    try {
-      await commentApi.create(post.id, commentContent);
-      setCommentContent("");
-
-      const commentRes = await commentApi.getList(post.id);
-      if (commentRes.data?.success) setComments(commentRes.data.data ?? []);
-    } catch {
-      alert("댓글 등록에 실패했습니다.");
-    }
+    alert("댓글 기능은 아직 백엔드 미구현 상태입니다.");
   };
 
   if (loading) {
@@ -110,9 +87,6 @@ const PostDetail: React.FC = () => {
       </Layout>
     );
   }
-
-  // 서버가 updateAt(오타)로 내려주는 경우까지 방어
-  const updatedAtRaw = (post as any).updatedAt ?? (post as any).updateAt;
 
   return (
     <Layout>
@@ -136,11 +110,11 @@ const PostDetail: React.FC = () => {
                   ? new Date(post.createdAt).toLocaleDateString("ko-KR")
                   : ""}
               </span>
-              {updatedAtRaw && (
+              {post.updatedAt && (
                 <>
                   <span className="text-gray-300">·</span>
                   <span className="text-gray-500">
-                    수정 {new Date(updatedAtRaw).toLocaleDateString("ko-KR")}
+                    수정 {new Date(post.updatedAt).toLocaleDateString("ko-KR")}
                   </span>
                 </>
               )}

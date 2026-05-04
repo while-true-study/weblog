@@ -2,6 +2,7 @@ package com.example.blog.post.repository.spec;
 
 import com.example.blog.post.entity.Post;
 import com.example.blog.post.entity.PostStatus;
+import com.example.blog.tag.entity.PostTag;
 import com.example.blog.tag.entity.Tag;
 import jakarta.persistence.criteria.Join;
 import jakarta.persistence.criteria.JoinType;
@@ -30,8 +31,9 @@ public final class PostSpecs {
         return (root, query, cb) -> {
             if (!StringUtils.hasText(tag)) return cb.conjunction();
             query.distinct(true); // join 때문에 중복 row 방지
-            Join<Post, Tag> tagJoin = root.join("postTags", JoinType.INNER);
-            return cb.equal(tagJoin.get("name"), tag.trim());
+            Join<Post, PostTag> postTagJoin = root.join("postTags", JoinType.INNER);
+            Join<PostTag, Tag> tagJoin = postTagJoin.join("tag", JoinType.INNER);
+            return cb.equal(tagJoin.get("tagName"), tag.trim());
         };
     }
 

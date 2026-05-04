@@ -3,7 +3,12 @@ package com.example.blog.post.presentation;
 import com.example.blog.global.common.ApiResponse;
 import com.example.blog.post.presentation.dto.request.PostPublishedDto;
 import com.example.blog.post.presentation.dto.request.PostUpdateRequest;
-import com.example.blog.post.presentation.dto.response.*;
+import com.example.blog.post.presentation.dto.response.PostCreateResponse;
+import com.example.blog.post.presentation.dto.response.PostDetailDto;
+import com.example.blog.post.presentation.dto.response.PostListItemDto;
+import com.example.blog.post.presentation.dto.response.PostSearchCond;
+import com.example.blog.post.presentation.dto.response.PostUpdateResponse;
+import com.example.blog.post.presentation.dto.response.SliceResponse;
 import com.example.blog.post.service.PostService;
 import com.example.blog.post.service.PostViewerIdResolver;
 import io.swagger.v3.oas.annotations.Operation;
@@ -14,11 +19,16 @@ import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Slice;
-import org.springframework.data.domain.Sort;
-import org.springframework.data.web.PageableDefault;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.core.userdetails.UserDetails;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.DeleteMapping;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PatchMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RestController;
 
 @Tag(name = "Post", description = "게시글 관련 API")
 @RestController
@@ -51,14 +61,15 @@ public class PostController {
     @PostMapping
     public ApiResponse<PostCreateResponse> createPost(
             @RequestBody PostPublishedDto req,
-            @AuthenticationPrincipal UserDetails userDetails) {
+            @AuthenticationPrincipal UserDetails userDetails
+    ) {
         PostCreateResponse postCreateResponse = postService.createPost(req, userDetails.getUsername());
         return ApiResponse.success(postCreateResponse);
     }
 
     @Operation(summary = "게시글 수정", description = "본인의 게시글을 수정합니다. (로그인 필요)")
     @SecurityRequirement(name = "bearerAuth")
-    @PutMapping("/{postId}")
+    @PatchMapping("/{postId}")
     public ApiResponse<PostUpdateResponse> updatePost(
             @Parameter(description = "게시글 ID") @PathVariable Long postId,
             @RequestBody PostUpdateRequest req,

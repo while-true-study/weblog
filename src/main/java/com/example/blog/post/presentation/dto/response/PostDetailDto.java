@@ -19,7 +19,7 @@ public record PostDetailDto(
         long viewCount,
         long likeCount,
         LocalDateTime createdAt,
-        LocalDateTime updateAt
+        LocalDateTime updatedAt
 ) {
     public static PostDetailDto from(Post p, long viewCount) {
         Long seriesId = (p.getSeries() != null) ? p.getSeries().getId() : null;
