@@ -1,0 +1,4 @@
+app:
+  notification:
+    outbox:
+      delay-ms: 0

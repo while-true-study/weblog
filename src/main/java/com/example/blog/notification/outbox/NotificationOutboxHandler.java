@@ -16,6 +16,7 @@ public class NotificationOutboxHandler implements OutboxEventHandler {
 
     private final OutboxPayloadSerializer serializer;
     private final NotificationService notificationService;
+    private final NotificationHandlerDelayInjector delayInjector;
 
     @Override
     public boolean supports(OutboxEvent event) {
@@ -24,6 +25,8 @@ public class NotificationOutboxHandler implements OutboxEventHandler {
 
     @Override
     public void handle(OutboxEvent event) {
+        delayInjector.delayBeforeHandle();
+
         NotificationOutboxPayload payload = serializer.deserialize(event.getPayload(), NotificationOutboxPayload.class);
 
         notificationService.createNotification(new NotificationCreateCommand(
