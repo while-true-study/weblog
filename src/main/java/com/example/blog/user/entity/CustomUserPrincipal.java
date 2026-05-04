@@ -12,14 +12,18 @@ public class CustomUserPrincipal implements UserDetails {
     private final Long id;
     private final String email;
     private final String password;
-    private final String nickname;   // ★ 추가
+    private final String nickname;
+    private final String displayUsername;
+    private final String role;
     private final Collection<? extends GrantedAuthority> authorities;
 
     public CustomUserPrincipal(User user) {
         this.id = user.getUserId();
         this.email = user.getEmail();
         this.password = user.getPassword();
-        this.nickname = user.getNickname();  // ★ User에서 가져오기
+        this.nickname = user.getNickname();
+        this.displayUsername = user.getUsername();
+        this.role = user.getRole().name();
         this.authorities = List.of(new SimpleGrantedAuthority("ROLE_" + user.getRole().name()));
     }
 
@@ -33,6 +37,14 @@ public class CustomUserPrincipal implements UserDetails {
 
     public String getNickname() {    // ★ 추가
         return nickname;
+    }
+
+    public String getDisplayUsername() {
+        return displayUsername;
+    }
+
+    public String getRole() {
+        return role;
     }
 
     @Override

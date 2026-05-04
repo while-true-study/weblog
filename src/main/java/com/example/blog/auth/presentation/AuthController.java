@@ -1,8 +1,11 @@
 package com.example.blog.auth.presentation;
 
+import com.example.blog.auth.presentation.dto.request.RefreshTokenRequest;
+import com.example.blog.auth.presentation.dto.response.RefreshTokenResponse;
 import com.example.blog.global.common.ApiResponse;
 import com.example.blog.global.security.jwt.JWTUtil;
 import com.example.blog.user.entity.CustomUserPrincipal;
+import com.example.blog.user.entity.User;
 import com.example.blog.user.presentation.dto.request.LoginRequest;
 import com.example.blog.user.presentation.dto.request.SignupRequest;
 import com.example.blog.user.presentation.dto.response.LoginResponse;
@@ -14,12 +17,14 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseCookie;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.web.server.ResponseStatusException;
 import org.springframework.web.bind.annotation.*;
 
 @Tag(name = "Auth", description = "회원가입/로그인/본인 조회 API")
@@ -67,6 +72,7 @@ public class AuthController {
         Authentication auth = authenticationManager.authenticate(
                 new UsernamePasswordAuthenticationToken(request.email(), request.password())
         );
+        CustomUserPrincipal principal = (CustomUserPrincipal) auth.getPrincipal();
 
         String role = auth.getAuthorities().stream()
                 .map(GrantedAuthority::getAuthority)
@@ -75,24 +81,55 @@ public class AuthController {
 
         String username = auth.getName(); // 보통 email
 
-        // access: 짧게
         String accessToken = jwtUtil.createJwt(username, role, ACCESS_TOKEN_EXPIRE_MS);
-
-        // refresh: 길게 (예: 14일)
         long refreshExpireMs = 1000L * 60 * 60 * 24 * 14;
-        String refreshToken = jwtUtil.createRefreshJwt(username, refreshExpireMs); // 아래 JWTUtil에 추가
+        String refreshToken = jwtUtil.createRefreshJwt(username, refreshExpireMs);
 
         ResponseCookie cookie = ResponseCookie.from("refreshToken", refreshToken)
                 .httpOnly(true)
-                .secure(false)         // 로컬 http면 false, 운영(https)은 true
-                .sameSite("Lax")       // 같은 site(localhost)면 보통 OK. 운영/크로스사이트면 None+Secure 고려
-                .path("/api/v1/auth")  // refresh 요청 경로 범위
+                .secure(false)
+                .sameSite("Lax")
+                .path("/api/v1/auth")
                 .maxAge(refreshExpireMs / 1000)
                 .build();
 
         response.addHeader(HttpHeaders.SET_COOKIE, cookie.toString());
 
-        return ApiResponse.success(new LoginResponse(accessToken, refreshToken));
+        return ApiResponse.success(
+                new LoginResponse(accessToken, refreshToken, UserResponse.from(principal))
+        );
+    }
+
+    @PostMapping("/refresh")
+    public ApiResponse<RefreshTokenResponse> refresh(@RequestBody RefreshTokenRequest request) {
+        if (request.refreshToken() == null || request.refreshToken().isBlank()) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "refreshToken이 필요합니다.");
+        }
+
+        if (jwtUtil.isTokenExpired(request.refreshToken())) {
+            throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "만료된 refreshToken입니다.");
+        }
+
+        String tokenType = jwtUtil.getType(request.refreshToken());
+        if (!"refresh".equals(tokenType)) {
+            throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "유효한 refreshToken이 아닙니다.");
+        }
+
+        String email = jwtUtil.getUsername(request.refreshToken());
+        User user;
+        try {
+            user = userService.getByEmail(email);
+        } catch (IllegalArgumentException e) {
+            throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "사용자를 찾을 수 없습니다.", e);
+        }
+
+        String accessToken = jwtUtil.createJwt(
+                user.getEmail(),
+                "ROLE_" + user.getRole().name(),
+                ACCESS_TOKEN_EXPIRE_MS
+        );
+
+        return ApiResponse.success(new RefreshTokenResponse(accessToken, request.refreshToken()));
     }
 
     @Operation(
@@ -102,8 +139,6 @@ public class AuthController {
     @SecurityRequirement(name = "bearerAuth") // JWT필요하다는 것
     @GetMapping("/me")
     public ApiResponse<UserResponse> me(@AuthenticationPrincipal CustomUserPrincipal principal) {
-        return ApiResponse.success(
-                new UserResponse(principal.getId(), principal.getEmail(), principal.getNickname())
-        );
+        return ApiResponse.success(UserResponse.from(principal));
     }
 }

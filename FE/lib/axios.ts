@@ -42,8 +42,6 @@ async function refreshAccessToken() {
   const { refreshToken } = useAuthStore.getState();
   if (!refreshToken) throw new Error("No refresh token");
 
-  // 당신 백엔드 경로에 맞게 수정
-  // 예: /api/v1/auth/refresh
   return axios.post(`${API_BASE_URL}/auth/refresh`, { refreshToken });
 }
 

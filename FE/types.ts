@@ -10,8 +10,9 @@ export interface User {
   id: number;
   email: string;
   nickname: string;
+  username: string;
+  role: "USER" | "ADMIN";
   avatar?: string; // Added avatar
-  role?: "USER" | "ADMIN";
   createdAt?: string;
 }
 
@@ -33,7 +34,6 @@ export interface PostSummary {
     avatar?: string | null;
   };
 
-  category?: string | null;
   tags?: string[]; // ["spring", "blog"]
   viewCount?: number;
 
@@ -47,7 +47,23 @@ export interface PostSummary {
 
 export interface PostDetail extends PostSummary {
   content: string;
+  seriesId?: number | null;
+  seriesName?: string | null;
   updatedAt?: string;
+}
+
+export interface PostCreateResponse {
+  id: number;
+  title: string;
+  status: "PUBLISHED" | "DRAFT" | "DELETED";
+  createdAt: string;
+}
+
+export interface PostUpdateResponse {
+  postId: number;
+  title: string;
+  version: number;
+  updatedAt: string;
 }
 
 export interface PageResponse<T> {
@@ -93,7 +109,7 @@ export interface SignupRequest {
 export interface PostCreateRequest {
   title: string;
   content: string;
-  category: string;
+  seriesId?: number;
   tags: string[];
   status: "PUBLISHED" | "DRAFT";
 }
@@ -101,6 +117,7 @@ export interface PostCreateRequest {
 export interface PostUpdateRequest {
   title?: string;
   content?: string;
-  category?: string;
+  seriesId?: number;
   tags?: string[];
+  status?: "PUBLISHED" | "DRAFT";
 }
