@@ -1,6 +1,7 @@
 package com.example.blog.support;
 
 import com.example.blog.global.security.jwt.JWTUtil;
+import com.example.blog.notification.repository.NotificationRepository;
 import com.example.blog.post.entity.Post;
 import com.example.blog.post.entity.PostStatus;
 import com.example.blog.post.repository.PostLikeRepository;
@@ -60,6 +61,9 @@ public abstract class IntegrationTestSupport {
     protected OutboxEventRepository outboxEventRepository;
 
     @Autowired
+    protected NotificationRepository notificationRepository;
+
+    @Autowired
     protected PostRepository postRepository;
 
     @Autowired
@@ -77,6 +81,7 @@ public abstract class IntegrationTestSupport {
     @BeforeEach
     void cleanDatabase() {
         outboxEventRepository.deleteAll();
+        notificationRepository.deleteAll();
         postLikeRepository.deleteAll();
         postRepository.deleteAll();
         seriesRepository.deleteAll();
