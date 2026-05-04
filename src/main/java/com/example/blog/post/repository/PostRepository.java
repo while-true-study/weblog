@@ -46,4 +46,6 @@ public interface PostRepository extends JpaRepository<Post, Long>, JpaSpecificat
     @Query("select p from Post p join fetch p.author")
     List<Post> findAllWithAuthor();
 
+    Optional<Post> findByAuthorUserIdAndTitle(Long authorUserId, String title);
+
 }
