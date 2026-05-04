@@ -379,3 +379,11 @@ where created_at >= :scenarioStart;
 - notification handler가 느려질 경우 backlog, 처리 지연, drain time이 증가할 수 있다.
 - mixed 시나리오에서 search outbox 처리 지연이 함께 증가하면 shared relay contention의 근거가 된다.
 - v2에서는 RabbitMQ + notification-service로 전달 경계와 처리 단위를 분리해 비교할 예정이다.
+
+## 8. Measurement Limitations
+
+- `VUS=2`, `DURATION=10s`는 절대 성능 측정이 아니라 relay contention 검증용 최소 부하다.
+- 이번 측정의 목적은 API 최대 처리량 산정이 아니라 outbox backlog, 처리 지연, drain time, mixed 시나리오의 `POST` 지연을 비교 가능한 기준선으로 남기는 것이다.
+- raw k6 JSON 결과와 중간 backlog 샘플 파일은 이번 커밋에 포함하지 않았다. v2 비교 측정부터는 raw 결과도 함께 보존할 예정이다.
+- baseline에서도 COMMENT outbox 평균 처리 지연이 `17.8s`였으며, 이는 `fixedDelay=3s` polling, batch size `100`, 요청량에 따른 backlog/drain 패턴의 영향을 함께 받는다.
+- 따라서 이 문서의 핵심 해석은 댓글 API latency 자체보다, 느린 notification handler가 relay 내부 처리 큐에 어떤 영향을 주는지에 있다.

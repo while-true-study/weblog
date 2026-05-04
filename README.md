@@ -28,10 +28,11 @@
    - 6.4 [조회수 중복 방지 — Redis SETNX](#64-조회수-중복-방지--redis-setnx)
    - 6.5 [JWT 인증 전략](#65-jwt-인증-전략)
    - 6.6 [ES Sync Repair Batch](#66-es-sync-repair-batch)
-7. [관찰가능성 (Observability)](#8-관찰가능성-observability)
-8. [테스트 전략](#9-테스트-전략)
-9. [실행 방법](#10-실행-방법)
-10. [프론트엔드](#11-프론트엔드)
+7. [관찰가능성 (Observability)](#7-관찰가능성-observability)
+8. [테스트 전략](#8-테스트-전략)
+9. [Load Test Findings](#9-load-test-findings)
+10. [실행 방법](#10-실행-방법)
+11. [프론트엔드](#11-프론트엔드)
 
 ---
 
@@ -822,7 +823,18 @@ H2 인메모리 DB 대신 **Testcontainers**로 실제 MySQL 8.0, Elasticsearch 
 
 ---
 
-## 9. 실행 방법
+## 9. Load Test Findings
+
+- 기준 문서: [docs/load-test-v1.md](docs/load-test-v1.md)
+- 이번 v1 측정은 `VUS=2`, `DURATION=10s` 조건의 최소 부하로 수행했고, 절대 성능 검증이 아니라 v1과 v2를 비교하기 위한 contention 기준선 확보가 목적이었습니다.
+- 댓글 API `p99`는 네 시나리오에서 약 `44~52ms` 범위로 유지됐고, 이는 Outbox가 댓글 작성 트랜잭션과 알림 후처리를 분리한 효과로 해석할 수 있습니다.
+- 반면 notification handler에 `300ms` 지연을 주입했을 때 COMMENT outbox 평균 처리 지연은 baseline `17.8s`에서 `148.0s`로 증가했습니다.
+- mixed 시나리오에서는 무관한 POST search outbox도 평균 `103.6s` 지연돼, search와 notification이 같은 relay/orchestrator 흐름을 공유하는 영향이 확인됐습니다.
+- 따라서 v1의 한계는 API 트랜잭션 결합이 아니라 shared relay contention이며, v2에서는 RabbitMQ + notification-service로 notification 처리를 별도 실행/배포/스케일링 단위로 분리할 예정입니다.
+
+---
+
+## 10. 실행 방법
 
 ### 사전 요구사항
 
@@ -900,7 +912,7 @@ curl -X POST "http://localhost:8080/api/v1/test/batch/repair-es?from=2026-03-25T
 
 ---
 
-## 10. 프론트엔드
+## 11. 프론트엔드
 
 ### 주요 페이지
 
