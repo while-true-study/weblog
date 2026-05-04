@@ -8,6 +8,10 @@ import com.example.blog.comment.presentation.dto.response.CommentResponse;
 import com.example.blog.comment.repository.CommentRepository;
 import com.example.blog.global.exception.BlogException;
 import com.example.blog.global.exception.ErrorCode;
+import com.example.blog.notification.entity.NotificationTargetType;
+import com.example.blog.notification.entity.NotificationType;
+import com.example.blog.notification.outbox.NotificationOutboxService;
+import com.example.blog.notification.outbox.dto.NotificationOutboxPayload;
 import com.example.blog.post.entity.Post;
 import com.example.blog.post.repository.PostRepository;
 import com.example.blog.user.entity.User;
@@ -26,6 +30,7 @@ public class CommentServiceImpl implements CommentService {
     private final CommentRepository commentRepository;
     private final PostRepository postRepository;
     private final UserRepository userRepository;
+    private final NotificationOutboxService notificationOutboxService;
 
     @Override
     @Transactional
@@ -38,6 +43,7 @@ public class CommentServiceImpl implements CommentService {
 
         Comment comment = Comment.create(post, user, request.content());
         Comment saved = commentRepository.save(comment);
+        enqueueNotificationIfNeeded(saved);
 
         return CommentResponse.from(saved, loginUserId);
     }
@@ -81,5 +87,32 @@ public class CommentServiceImpl implements CommentService {
         if (!comment.getAuthor().getUserId().equals(loginUserId)) {
             throw new BlogException(ErrorCode.COMMENT_FORBIDDEN);
         }
+    }
+
+    private void enqueueNotificationIfNeeded(Comment comment) {
+        Long recipientUserId = comment.getPost().getAuthor().getUserId();
+        Long actorUserId = comment.getAuthor().getUserId();
+
+        if (recipientUserId.equals(actorUserId)) {
+            return;
+        }
+
+        String title = "새 댓글이 달렸습니다.";
+        String message = "%s님이 회원님의 게시글에 댓글을 남겼습니다.".formatted(
+                comment.getAuthor().getNickname()
+        );
+
+        notificationOutboxService.createCommentCreatedEvent(
+                comment.getId(),
+                new NotificationOutboxPayload(
+                        recipientUserId,
+                        actorUserId,
+                        NotificationType.ACTIVITY,
+                        title,
+                        message,
+                        NotificationTargetType.ACTIVITY,
+                        comment.getId()
+                )
+        );
     }
 }
